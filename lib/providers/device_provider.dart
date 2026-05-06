@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mqtt_client/mqtt_client.dart'; // Tambahkan import ini untuk MqttConnectionState
 import '../models/device.dart';
 import '../models/log_entry.dart';
 import '../services/mqtt_service.dart';
@@ -13,14 +14,25 @@ class DeviceProvider extends ChangeNotifier {
   DeviceProvider(this.mqttService) {
     mqttService.onTelemetry = _handleTelemetry;
     _loadLogsFromStorage();
+    _loadDevicesFromStorage();
+    _initMqtt();
+  }
+
+  void _initMqtt() async {
+    await mqttService.connect();
+    notifyListeners();
   }
 
   void refresh() {
-  notifyListeners();
-}
+    notifyListeners();
+  }
 
   // === HANDLE INCOMING TELEMETRY / EVENT ===
-  void _handleTelemetry(String deviceId, String event, Map<String, dynamic>? data) {
+  void _handleTelemetry(
+    String deviceId,
+    String event,
+    Map<String, dynamic>? data,
+  ) {
     final now = DateTime.now();
 
     // Update atau buat device
@@ -62,12 +74,26 @@ class DeviceProvider extends ChangeNotifier {
     // Simpan log ke SharedPreferences (maks 1000 log terbaru agar tidak membengkak)
     _saveLogsToStorage();
 
+    // Simpan data perangkat agar tidak hilang saat restart
+    _saveDevicesToStorage();
+
     notifyListeners();
   }
 
   // === KIRIM PERINTAH ===
   void sendCommand(String deviceId, Map<String, dynamic> command) {
     mqttService.publishCommand(deviceId, command);
+  }
+
+  // === HAPUS LOG ===
+  Future<void> clearLogs({String? deviceId}) async {
+    if (deviceId == null) {
+      _logs.clear();
+    } else {
+      _logs.removeWhere((log) => log.deviceId == deviceId);
+    }
+    await _saveLogsToStorage();
+    notifyListeners();
   }
 
   // === GETTERS ===
@@ -81,12 +107,43 @@ class DeviceProvider extends ChangeNotifier {
       _logs.where((log) => log.deviceId == id).toList();
 
   int get onlineCount => _devices.values.where((d) {
-        if (d.lastSeen == null) return false;
-        return DateTime.now().difference(d.lastSeen!).inMinutes < 5;
-      }).length;
+    if (d.lastSeen == null) return false;
+    return DateTime.now().difference(d.lastSeen!).inMinutes < 5;
+  }).length;
 
-  // === PENYIMPANAN LOG LOKAL ===
+  // === GETTER STATUS MQTT ===
+  bool get isMqttConnected {
+    try {
+      if (mqttService.client.connectionStatus == null) return false;
+      return mqttService.client.connectionStatus!.state ==
+          MqttConnectionState.connected;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  // === PENYIMPANAN LOG & DEVICE LOKAL ===
   static const _logKey = 'device_logs';
+  static const _deviceKey = 'saved_devices';
+
+  Future<void> _saveDevicesToStorage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonList = _devices.values.map((e) => e.toJson()).toList();
+    prefs.setString(_deviceKey, jsonEncode(jsonList));
+  }
+
+  Future<void> _loadDevicesFromStorage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString(_deviceKey);
+    if (jsonString != null) {
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      for (var item in jsonList) {
+        final device = Device.fromJson(item);
+        _devices[device.id] = device;
+      }
+      notifyListeners();
+    }
+  }
 
   Future<void> _saveLogsToStorage() async {
     final prefs = await SharedPreferences.getInstance();

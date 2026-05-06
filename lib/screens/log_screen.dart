@@ -27,9 +27,14 @@ class _LogScreenState extends State<LogScreen> {
     // Data grafik baterai (20 titik terakhir)
     final batteryData = <FlSpot>[];
     final telemetryLogs = logs
-        .where((l) => l.event == 'telemetry' && l.data != null && l.data!['bat'] != null)
+        .where(
+          (l) =>
+              l.event == 'telemetry' &&
+              l.data != null &&
+              l.data!['bat'] != null,
+        )
         .take(20)
-        .toList();  // ubah ke list agar bisa reversed
+        .toList(); // ubah ke list agar bisa reversed
     double x = 0;
     // Mulai dari yang terlama (reversed)
     for (final log in telemetryLogs.reversed) {
@@ -47,7 +52,12 @@ class _LogScreenState extends State<LogScreen> {
             underline: const SizedBox(),
             items: [
               const DropdownMenuItem(value: null, child: Text('Semua')),
-              ...devices.map((d) => DropdownMenuItem(value: d.id, child: Text(d.id.substring(0, 8)))),
+              ...devices.map(
+                (d) => DropdownMenuItem(
+                  value: d.id,
+                  child: Text(d.id.substring(0, 8)),
+                ),
+              ),
             ],
             onChanged: (val) => setState(() => _filterDeviceId = val),
           ),
@@ -68,13 +78,22 @@ class _LogScreenState extends State<LogScreen> {
                       color: Colors.green,
                       belowBarData: BarAreaData(
                         show: true,
-                        color: Colors.green.withValues(alpha: 0.3), // ganti withOpacity
+                        color: Colors.green.withValues(
+                          alpha: 0.3,
+                        ), // ganti withOpacity
                       ),
                     ),
                   ],
                   titlesData: const FlTitlesData(
-                    leftTitles: AxisTitles(sideTitles: SideTitles(showTitles: true, reservedSize: 32)),
-                    bottomTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                    leftTitles: AxisTitles(
+                      sideTitles: SideTitles(
+                        showTitles: true,
+                        reservedSize: 32,
+                      ),
+                    ),
+                    bottomTitles: AxisTitles(
+                      sideTitles: SideTitles(showTitles: false),
+                    ),
                   ),
                   gridData: const FlGridData(show: true),
                 ),
@@ -88,18 +107,27 @@ class _LogScreenState extends State<LogScreen> {
                     itemBuilder: (ctx, i) {
                       final log = logs[i];
                       String title = log.event;
-                      String subtitle = DateFormat('dd/MM HH:mm:ss').format(log.timestamp);
+                      String subtitle = DateFormat(
+                        'dd/MM HH:mm:ss',
+                      ).format(log.timestamp);
                       if (log.data != null) {
-                        if (log.data!.containsKey('bat')) subtitle += ' | Bat: ${log.data!['bat']}%';
-                        if (log.data!.containsKey('duration')) subtitle += ' | Durasi: ${log.data!['duration']}s';
-                        if (log.data!.containsKey('source')) subtitle += ' | Sumber: ${log.data!['source']}';
+                        if (log.data!.containsKey('bat'))
+                          subtitle += ' | Bat: ${log.data!['bat']}%';
+                        if (log.data!.containsKey('duration'))
+                          subtitle += ' | Durasi: ${log.data!['duration']}s';
+                        if (log.data!.containsKey('source'))
+                          subtitle += ' | Sumber: ${log.data!['source']}';
                       }
 
                       return ListTile(
                         dense: true,
                         leading: CircleAvatar(
                           backgroundColor: _eventColor(log.event),
-                          child: Icon(_eventIcon(log.event), size: 20, color: Colors.white),
+                          child: Icon(
+                            _eventIcon(log.event),
+                            size: 20,
+                            color: Colors.white,
+                          ),
                         ),
                         title: Text(title),
                         subtitle: Text(subtitle),
@@ -114,12 +142,18 @@ class _LogScreenState extends State<LogScreen> {
 
   Color _eventColor(String event) {
     switch (event) {
-      case 'uv_on': return Colors.purple;
-      case 'uv_off': return Colors.grey;
-      case 'pump_on': return Colors.blue;
-      case 'pump_off': return Colors.grey;
-      case 'telemetry': return Colors.green;
-      default: return Colors.orange;
+      case 'uv_on':
+        return Colors.purple;
+      case 'uv_off':
+        return Colors.grey;
+      case 'pump_on':
+        return Colors.blue;
+      case 'pump_off':
+        return Colors.grey;
+      case 'telemetry':
+        return Colors.green;
+      default:
+        return Colors.orange;
     }
   }
 

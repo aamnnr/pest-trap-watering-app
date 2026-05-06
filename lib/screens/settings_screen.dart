@@ -27,12 +27,20 @@ class SettingsScreen extends StatelessWidget {
             subtitle: Text('broker.hivemq.com:1883'),
           ),
           const Divider(),
-          const Text('Perangkat yang Terdeteksi', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-          ...devices.map((d) => ListTile(
-                title: Text(d.id),
-                subtitle: Text('Baterai: ${d.battery}% | UV: ${d.uvOn} | Pompa: ${d.pumpOn}'),
-              )),
-          if (devices.isEmpty) const ListTile(title: Text('Tidak ada perangkat')),
+          const Text(
+            'Perangkat yang Terdeteksi',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+          ),
+          ...devices.map(
+            (d) => ListTile(
+              title: Text(d.id),
+              subtitle: Text(
+                'Baterai: ${d.battery}% | UV: ${d.uvOn} | Pompa: ${d.pumpOn}',
+              ),
+            ),
+          ),
+          if (devices.isEmpty)
+            const ListTile(title: Text('Tidak ada perangkat')),
         ],
       ),
     );

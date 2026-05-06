@@ -14,4 +14,24 @@ class Device {
     this.pumpOn = false,
     this.lastSeen,
   });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'battery': battery,
+        'isNight': isNight,
+        'uvOn': uvOn,
+        'pumpOn': pumpOn,
+        'lastSeen': lastSeen?.toIso8601String(),
+      };
+
+  factory Device.fromJson(Map<String, dynamic> json) => Device(
+        id: json['id'] as String,
+        battery: json['battery'] as int? ?? 0,
+        isNight: json['isNight'] as bool? ?? false,
+        uvOn: json['uvOn'] as bool? ?? false,
+        pumpOn: json['pumpOn'] as bool? ?? false,
+        lastSeen: json['lastSeen'] != null
+            ? DateTime.parse(json['lastSeen'] as String)
+            : null,
+      );
 }

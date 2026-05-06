@@ -1,7 +1,9 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'services/mqtt_service.dart';
 import 'providers/device_provider.dart';
+import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/control_screen.dart';
 import 'screens/reset_wifi_screen.dart';
@@ -29,10 +31,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'PestTrap Watering',
-      theme: ThemeData(
-        brightness: Brightness.light,
-        primarySwatch: Colors.green,
-      ),
+      theme: AppTheme.darkTheme,
       home: const MainScreen(),
       debugShowCheckedModeBanner: false,
     );
@@ -59,17 +58,68 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _screens[_currentIndex],
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (index) => setState(() => _currentIndex = index),
-        type: BottomNavigationBarType.fixed, // agar lebih dari 3 item terlihat
-        items: const [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Beranda'),
-          BottomNavigationBarItem(icon: Icon(Icons.control_camera), label: 'Kontrol'),
-          BottomNavigationBarItem(icon: Icon(Icons.wifi_off), label: 'Reset WiFi'),
-          BottomNavigationBarItem(icon: Icon(Icons.info), label: 'Info'),
-        ],
+      extendBody: true, // Allows body to go under the transparent nav bar
+      body: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _screens[_currentIndex],
+      ),
+      bottomNavigationBar: SafeArea(
+        child: Container(
+          margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+          decoration: BoxDecoration(
+            color: AppTheme.cardBg.withValues(alpha: 0.8),
+            borderRadius: BorderRadius.circular(32),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 20,
+                offset: const Offset(0, 10),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(32),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: BottomNavigationBar(
+                currentIndex: _currentIndex,
+                onTap: (index) => setState(() => _currentIndex = index),
+                type: BottomNavigationBarType.fixed,
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                selectedItemColor: AppTheme.primaryGreen,
+                unselectedItemColor: AppTheme.textSecondary,
+                showSelectedLabels: true,
+                showUnselectedLabels: false,
+                items: const [
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.home_rounded),
+                    activeIcon: Icon(Icons.home_rounded, size: 28),
+                    label: 'Beranda',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.tune_rounded),
+                    activeIcon: Icon(Icons.tune_rounded, size: 28),
+                    label: 'Kontrol',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.wifi_protected_setup_rounded),
+                    activeIcon: Icon(
+                      Icons.wifi_protected_setup_rounded,
+                      size: 28,
+                    ),
+                    label: 'WiFi',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.analytics_rounded),
+                    activeIcon: Icon(Icons.analytics_rounded, size: 28),
+                    label: 'Info',
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/device_provider.dart';
@@ -12,215 +13,447 @@ class ControlScreen extends StatefulWidget {
 
 class _ControlScreenState extends State<ControlScreen> {
   String? _selectedDeviceId;
-  final _uvStartController = TextEditingController();
-  final _uvStopController = TextEditingController();
-  final _pumpHourController = TextEditingController();
-  final _pumpMinuteController = TextEditingController();
-  final _pumpDurationController = TextEditingController();
+  
+  // Menggunakan default value format HH:mm
+  final _uvStartController = TextEditingController(text: '18:00');
+  final _uvStopController = TextEditingController(text: '23:00');
+  final _pumpTimeController = TextEditingController(text: '06:00'); 
+  final _pumpDurationController = TextEditingController(text: '15');
   final _manualPumpDurationController = TextEditingController(text: '10');
+
+  @override
+  void dispose() {
+    _uvStartController.dispose();
+    _uvStopController.dispose();
+    _pumpTimeController.dispose();
+    _pumpDurationController.dispose();
+    _manualPumpDurationController.dispose();
+    super.dispose();
+  }
+
+  // Fungsi untuk memunculkan dialog TimePicker
+  Future<void> _selectTime(BuildContext context, TextEditingController controller) async {
+    TimeOfDay initial = TimeOfDay.now();
+    if (controller.text.contains(':')) {
+      final parts = controller.text.split(':');
+      initial = TimeOfDay(
+        hour: int.tryParse(parts[0]) ?? initial.hour,
+        minute: int.tryParse(parts[1]) ?? initial.minute,
+      );
+    }
+
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: initial,
+    );
+
+    if (picked != null) {
+      final h = picked.hour.toString().padLeft(2, '0');
+      final m = picked.minute.toString().padLeft(2, '0');
+      setState(() {
+        controller.text = '$h:$m';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DeviceProvider>();
     final devices = provider.devices;
-    final device = _selectedDeviceId != null ? provider.getDevice(_selectedDeviceId!) : null;
+    final device = _selectedDeviceId != null
+        ? provider.getDevice(_selectedDeviceId!)
+        : null;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: Text('Kontrol & Penjadwalan'),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(color: AppTheme.darkBg.withValues(alpha: 0.5)),
+          ),
+        ),
+        title: const Text('Kontrol & Penjadwalan'),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        physics: const BouncingScrollPhysics(),
+        padding: EdgeInsets.fromLTRB(
+          20,
+          MediaQuery.of(context).padding.top + kToolbarHeight + 16,
+          20,
+          100,
+        ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Device Selector
             Container(
-              padding: EdgeInsets.all(16),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
                 color: AppTheme.cardBg,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.white10),
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     children: [
-                      Icon(Icons.devices, color: AppTheme.primaryGreen),
-                      SizedBox(width: 8),
-                      Text('Pilih Perangkat', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.router_rounded,
+                          color: AppTheme.primaryGreen,
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      const Text(
+                        'Pilih Perangkat',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
                     ],
                   ),
-                  SizedBox(height: 12),
+                  const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
                     initialValue: _selectedDeviceId,
                     decoration: InputDecoration(
                       hintText: 'Pilih perangkat...',
-                      filled: true,
+                      prefixIcon: const Icon(
+                        Icons.sensors_rounded,
+                        color: AppTheme.textSecondary,
+                      ),
                       fillColor: AppTheme.surfaceBg,
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                      prefixIcon: Icon(Icons.sensors),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                     dropdownColor: AppTheme.surfaceBg,
-                    items: devices.map((d) => DropdownMenuItem(
-                      value: d.id,
-                      child: Text('Device ${d.id.substring(0, 8)}...'),
-                    )).toList(),
+                    icon: const Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: AppTheme.primaryGreen,
+                    ),
+                    items: devices
+                        .map(
+                          (d) => DropdownMenuItem(
+                            value: d.id,
+                            child: Text(
+                              'Device ${(d.id.length >= 6 ? d.id.substring(0, 6) : d.id).toUpperCase()}',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        )
+                        .toList(),
                     onChanged: (val) => setState(() => _selectedDeviceId = val),
                   ),
                 ],
               ),
             ),
+
             if (device != null) ...[
-              SizedBox(height: 20),
-              // Status Bar
+              const SizedBox(height: 24),
+              // Status Bar Quick Info
               Container(
-                padding: EdgeInsets.all(12),
+                padding: const EdgeInsets.symmetric(vertical: 20),
                 decoration: BoxDecoration(
                   color: AppTheme.cardBg,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
                 ),
                 child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _StatusItem(icon: Icons.lightbulb, label: 'UV', isOn: device.uvOn, color: AppTheme.accentPurple),
-                    _StatusItem(icon: Icons.water_drop, label: 'Pompa', isOn: device.pumpOn, color: AppTheme.accentBlue),
-                    _StatusItem(icon: Icons.battery_std, label: 'Baterai', value: '${device.battery}%', color: Colors.orange),
+                    _StatusItem(
+                      icon: Icons.lightbulb_rounded,
+                      label: 'UV Light',
+                      isOn: device.uvOn,
+                      color: AppTheme.accentPurple,
+                    ),
+                    Container(
+                      width: 1,
+                      height: 40,
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
+                    _StatusItem(
+                      icon: Icons.water_drop_rounded,
+                      label: 'Water Pump',
+                      isOn: device.pumpOn,
+                      color: AppTheme.accentBlue,
+                    ),
+                    Container(
+                      width: 1,
+                      height: 40,
+                      color: Colors.white.withValues(alpha: 0.1),
+                    ),
+                    _StatusItem(
+                      icon: Icons.battery_charging_full_rounded,
+                      label: 'Baterai',
+                      value: '${device.battery}%',
+                      color: AppTheme.warningOrange,
+                    ),
                   ],
                 ),
               ),
-              SizedBox(height: 20),
+              const SizedBox(height: 28),
 
               // Section: Kontrol Manual
-              Text('Kontrol Manual', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 12),
+              const Text(
+                'Kontrol Manual',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
               Row(
                 children: [
                   Expanded(
                     child: _ControlButton(
-                      icon: Icons.lightbulb,
-                      label: 'UV',
+                      icon: Icons.lightbulb_rounded,
+                      label: 'UV Light',
                       isOn: device.uvOn,
-                      onToggle: (val) => provider.sendCommand(device.id, {'uv_action': val ? 'ON' : 'OFF'}),
                       color: AppTheme.accentPurple,
+                      onToggle: (val) => provider.sendCommand(device.id, {
+                        'uv_action': val ? 'ON' : 'OFF',
+                      }),
                     ),
                   ),
-                  SizedBox(width: 12),
+                  const SizedBox(width: 16),
                   Expanded(
                     child: _ControlButton(
-                      icon: Icons.water,
-                      label: 'Pompa',
+                      icon: Icons.water_drop_rounded,
+                      label: 'Water Pump',
                       isOn: device.pumpOn,
-                      onToggle: (val) => provider.sendCommand(device.id, {'pump_action': val ? 'ON' : 'OFF'}),
                       color: AppTheme.accentBlue,
+                      onToggle: (val) => provider.sendCommand(device.id, {
+                        'pump_action': val ? 'ON' : 'OFF',
+                      }),
                     ),
                   ),
                 ],
               ),
-              SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: _manualPumpDurationController,
-                      keyboardType: TextInputType.number,
-                      style: TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        labelText: 'Durasi Manual (detik)',
-                        suffixIcon: Icon(Icons.timer, color: AppTheme.textSecondary),
+              const SizedBox(height: 16),
+
+              // Pompa Manual dengan Durasi
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBg,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Penyiraman Khusus',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: AppTheme.textPrimary,
                       ),
                     ),
-                  ),
-                  SizedBox(width: 12),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.play_arrow),
-                    label: Text('Jalankan'),
-                    onPressed: () {
-                      int dur = int.tryParse(_manualPumpDurationController.text) ?? 10;
-                      provider.sendCommand(device.id, {'pump_action': 'ON', 'duration_sec': dur});
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.accentBlue,
-                      padding: EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _buildTextField(
+                            'Durasi (detik)',
+                            _manualPumpDurationController,
+                            Icons.timer_rounded,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        ElevatedButton(
+                          onPressed: () {
+                            int dur =
+                                int.tryParse(
+                                  _manualPumpDurationController.text,
+                                ) ??
+                                10;
+                            provider.sendCommand(device.id, {
+                              'pump_action': 'ON',
+                              'duration_sec': dur,
+                            });
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppTheme.accentBlue,
+                            padding: const EdgeInsets.all(16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.play_arrow_rounded,
+                            color: Colors.white,
+                            size: 28,
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 32),
 
               // Section: Penjadwalan
-              Text('Penjadwalan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 12),
+              const Text(
+                'Penjadwalan Otomatis',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 16),
 
               // UV Schedule Card
               _ScheduleCard(
-                icon: Icons.lightbulb,
-                title: 'Jadwal UV',
+                icon: Icons.wb_sunny_rounded,
+                title: 'Jadwal UV Light',
                 color: AppTheme.accentPurple,
                 children: [
                   Row(
                     children: [
-                      Expanded(child: _buildTextField('Jam Mulai', _uvStartController)),
-                      SizedBox(width: 12),
-                      Expanded(child: _buildTextField('Jam Selesai', _uvStopController)),
+                      Expanded(
+                        child: _buildTimeField(
+                          'Jam Mulai',
+                          _uvStartController,
+                          Icons.wb_twilight_rounded,
+                          () => _selectTime(context, _uvStartController),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _buildTimeField(
+                          'Jam Selesai',
+                          _uvStopController,
+                          Icons.nights_stay_rounded,
+                          () => _selectTime(context, _uvStopController),
+                        ),
+                      ),
                     ],
                   ),
-                  SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.save),
-                    label: Text('Simpan Jadwal UV'),
-                    onPressed: () {
-                      int start = int.tryParse(_uvStartController.text) ?? 18;
-                      int stop = int.tryParse(_uvStopController.text) ?? 23;
-                      provider.sendCommand(device.id, {'uv_start': start, 'uv_stop': stop});
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentPurple),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.save_rounded),
+                      label: const Text('Simpan Jadwal UV'),
+                      onPressed: () {
+                        // ESP32 hanya butuh parameter jam dalam integer
+                        int start = int.tryParse(_uvStartController.text.split(':')[0]) ?? 18;
+                        int stop = int.tryParse(_uvStopController.text.split(':')[0]) ?? 23;
+                        provider.sendCommand(device.id, {
+                          'uv_start': start,
+                          'uv_stop': stop,
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.accentPurple,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
                   ),
                 ],
               ),
-              SizedBox(height: 16),
+              const SizedBox(height: 16),
 
               // Pump Schedule Card
               _ScheduleCard(
-                icon: Icons.water,
+                icon: Icons.water_rounded,
                 title: 'Jadwal Penyiraman',
                 color: AppTheme.accentBlue,
                 children: [
                   Row(
                     children: [
-                      Expanded(child: _buildTextField('Jam', _pumpHourController)),
-                      SizedBox(width: 8),
-                      Expanded(child: _buildTextField('Menit', _pumpMinuteController)),
-                      SizedBox(width: 8),
-                      Expanded(child: _buildTextField('Durasi (s)', _pumpDurationController)),
+                      Expanded(
+                        flex: 5,
+                        child: _buildTimeField(
+                          'Waktu Siram',
+                          _pumpTimeController,
+                          Icons.access_time_rounded,
+                          () => _selectTime(context, _pumpTimeController),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        flex: 4,
+                        child: _buildTextField(
+                          'Durasi (s)',
+                          _pumpDurationController,
+                          null,
+                        ),
+                      ),
                     ],
                   ),
-                  SizedBox(height: 12),
-                  ElevatedButton.icon(
-                    icon: Icon(Icons.save),
-                    label: Text('Simpan Jadwal'),
-                    onPressed: () {
-                      int h = int.tryParse(_pumpHourController.text) ?? 6;
-                      int m = int.tryParse(_pumpMinuteController.text) ?? 0;
-                      int d = int.tryParse(_pumpDurationController.text) ?? 15;
-                      provider.sendCommand(device.id, {
-                        'pump_schedule': {'hour': h, 'minute': m, 'duration_sec': d}
-                      });
-                    },
-                    style: ElevatedButton.styleFrom(backgroundColor: AppTheme.accentBlue),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.save_rounded),
+                      label: const Text('Simpan Jadwal Pompa'),
+                      onPressed: () {
+                        final parts = _pumpTimeController.text.split(':');
+                        int h = int.tryParse(parts[0]) ?? 6;
+                        int m = int.tryParse(parts[1]) ?? 0;
+                        int d =
+                            int.tryParse(_pumpDurationController.text) ?? 15;
+                        provider.sendCommand(device.id, {
+                          'pump_schedule': {
+                            'hour': h,
+                            'minute': m,
+                            'duration_sec': d,
+                          },
+                        });
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.accentBlue,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                      ),
+                    ),
                   ),
                 ],
               ),
             ] else if (devices.isEmpty)
               Padding(
-                padding: const EdgeInsets.all(32),
-                child: Column(children: [
-                  Icon(Icons.sensors_off, size: 64, color: Colors.white24),
-                  SizedBox(height: 16),
-                  Text('Tidak ada perangkat', style: TextStyle(color: AppTheme.textSecondary)),
-                ]),
+                padding: const EdgeInsets.all(40),
+                child: Column(
+                  children: [
+                    Icon(
+                      Icons.sensors_off_rounded,
+                      size: 80,
+                      color: AppTheme.surfaceBg,
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'Belum ada perangkat terhubung',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: AppTheme.textSecondary,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ],
+                ),
               ),
           ],
         ),
@@ -228,15 +461,42 @@ class _ControlScreenState extends State<ControlScreen> {
     );
   }
 
-  Widget _buildTextField(String label, TextEditingController controller) {
+  // Komponen text field standar untuk input angka durasi
+  Widget _buildTextField(
+    String label,
+    TextEditingController controller,
+    IconData? icon,
+  ) {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
-      style: TextStyle(color: Colors.white),
+      style: const TextStyle(fontWeight: FontWeight.bold),
       decoration: InputDecoration(
         labelText: label,
-        labelStyle: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-        contentPadding: EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        prefixIcon: icon != null
+            ? Icon(icon, size: 20, color: AppTheme.textSecondary)
+            : null,
+        fillColor: AppTheme.surfaceBg,
+      ),
+    );
+  }
+
+  // Komponen text field khusus yang memunculkan Time Picker saat ditekan
+  Widget _buildTimeField(
+    String label,
+    TextEditingController controller,
+    IconData icon,
+    VoidCallback onTap,
+  ) {
+    return TextField(
+      controller: controller,
+      readOnly: true,
+      onTap: onTap,
+      style: const TextStyle(fontWeight: FontWeight.bold),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, size: 20, color: AppTheme.textSecondary),
+        fillColor: AppTheme.surfaceBg,
       ),
     );
   }
@@ -261,13 +521,29 @@ class _StatusItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        Icon(icon, color: isOn != null ? (isOn! ? color : Colors.white38) : color),
-        SizedBox(height: 4),
+        Icon(
+          icon,
+          color: isOn != null ? (isOn! ? color : AppTheme.offlineGrey) : color,
+          size: 28,
+        ),
+        const SizedBox(height: 8),
         Text(
           value ?? (isOn != null ? (isOn! ? 'ON' : 'OFF') : ''),
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+            color: isOn == true ? color : AppTheme.textPrimary,
+          ),
         ),
-        Text(label, style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: AppTheme.textSecondary,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ],
     );
   }
@@ -290,33 +566,76 @@ class _ControlButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
+    return GestureDetector(
       onTap: () => onToggle(!isOn),
       child: AnimatedContainer(
-        duration: Duration(milliseconds: 300),
-        padding: EdgeInsets.all(20),
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOutExpo,
+        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
         decoration: BoxDecoration(
-          color: isOn ? color.withValues(alpha:0.2) : AppTheme.cardBg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isOn ? color : Colors.white10, width: 2),
-          boxShadow: isOn ? [BoxShadow(color: color.withValues(alpha:0.3), blurRadius: 12)] : [],
+          color: isOn ? color.withValues(alpha: 0.15) : AppTheme.cardBg,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isOn ? color : Colors.white.withValues(alpha: 0.05),
+            width: 2,
+          ),
+          boxShadow: isOn
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.2),
+                    blurRadius: 16,
+                    offset: const Offset(0, 8),
+                  ),
+                ]
+              : [],
         ),
         child: Column(
           children: [
-            Icon(icon, size: 40, color: isOn ? color : Colors.white38),
-            SizedBox(height: 8),
-            Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-            SizedBox(height: 4),
-            Container(
-              padding: EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 300),
+              padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isOn ? color : Colors.white10,
+                color: isOn ? color : AppTheme.surfaceBg,
+                shape: BoxShape.circle,
+                boxShadow: isOn
+                    ? [
+                        BoxShadow(
+                          color: color.withValues(alpha: 0.5),
+                          blurRadius: 12,
+                        ),
+                      ]
+                    : [],
+              ),
+              child: Icon(
+                icon,
+                size: 36,
+                color: isOn ? Colors.white : AppTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              label,
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+                color: AppTheme.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: isOn ? color.withValues(alpha: 0.2) : AppTheme.surfaceBg,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                isOn ? 'ON' : 'OFF',
-                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                isOn ? 'ACTIVE' : 'INACTIVE',
+                style: TextStyle(
+                  color: isOn ? color : AppTheme.textSecondary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 10,
+                  letterSpacing: 1.0,
+                ),
               ),
             ),
           ],
@@ -342,23 +661,37 @@ class _ScheduleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(16),
+      padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
         color: AppTheme.cardBg,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha:0.3)),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, color: color),
-              SizedBox(width: 8),
-              Text(title, style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.white)),
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: color, size: 24),
+              ),
+              const SizedBox(width: 16),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
             ],
           ),
-          SizedBox(height: 12),
+          const SizedBox(height: 20),
           ...children,
         ],
       ),
