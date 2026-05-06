@@ -337,7 +337,7 @@ class _InfoScreenState extends State<InfoScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           const Text(
-                            'PestTrap Watering v1.0',
+                            'Pestzone Spray v1.0',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
                               color: AppTheme.textPrimary,
