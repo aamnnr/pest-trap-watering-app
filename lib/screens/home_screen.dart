@@ -27,7 +27,7 @@ class HomeScreen extends StatelessWidget {
             child: Container(color: AppTheme.darkBg.withValues(alpha: 0.5)),
           ),
         ),
-        title: const Text('PestTrap Watering System'),
+        title: const Text('Pestzone Spray'),
         centerTitle: true,
         actions: [
           IconButton(

@@ -260,7 +260,7 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
-                          'Setelah reset, hubungkan ke WiFi "PestTrap-Setup-XXXXXX" dan buka 192.168.4.1 untuk mengatur ulang.',
+                          'Setelah reset, hubungkan ke WiFi "PestzoneSpray-Setup-XXXXXX" dan buka 192.168.4.1 untuk mengatur ulang.',
                           style: TextStyle(
                             fontSize: 11,
                             color: AppTheme.warningOrange.withValues(
