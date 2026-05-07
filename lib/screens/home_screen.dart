@@ -7,7 +7,9 @@ import '../theme/app_theme.dart';
 import '../models/device.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final Function(String)? onDeviceTap;
+
+  const HomeScreen({super.key, this.onDeviceTap});
 
   @override
   Widget build(BuildContext context) {
@@ -270,7 +272,12 @@ class HomeScreen extends StatelessWidget {
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final dev = devices[index];
-                        return DeviceCard(device: dev);
+                        return DeviceCard(
+                          device: dev,
+                          onTap: onDeviceTap != null
+                              ? () => onDeviceTap!(dev.id)
+                              : null,
+                        );
                       }, childCount: devices.length),
                     ),
                   ),
@@ -283,7 +290,9 @@ class HomeScreen extends StatelessWidget {
 
 class DeviceCard extends StatelessWidget {
   final Device device;
-  const DeviceCard({super.key, required this.device});
+  final VoidCallback? onTap;
+  
+  const DeviceCard({super.key, required this.device, this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -297,23 +306,25 @@ class DeviceCard extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppTheme.cardBg,
-          borderRadius: BorderRadius.circular(24),
-          border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(24),
-          child: Stack(
-            children: [
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          decoration: BoxDecoration(
+            color: AppTheme.cardBg,
+            borderRadius: BorderRadius.circular(24),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(24),
+            child: Stack(
+              children: [
               // Glassmorphism accent glow
               Positioned(
                 top: -20,
@@ -458,6 +469,7 @@ class DeviceCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
       ),
     );
   }

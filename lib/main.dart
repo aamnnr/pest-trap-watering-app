@@ -7,7 +7,7 @@ import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/control_screen.dart';
 import 'screens/reset_wifi_screen.dart';
-import 'screens/info_screen.dart';
+import 'screens/log_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -48,12 +48,29 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
 
-  final List<Widget> _screens = [
-    const HomeScreen(),
-    const ControlScreen(),
-    const ResetWifiScreen(),
-    const InfoScreen(),
-  ];
+  String? _selectedDeviceIdForControl;
+
+  Widget _buildScreen(int index) {
+    switch (index) {
+      case 0:
+        return HomeScreen(
+          onDeviceTap: (deviceId) {
+            setState(() {
+              _selectedDeviceIdForControl = deviceId;
+              _currentIndex = 1; // Navigasi ke ControlScreen
+            });
+          },
+        );
+      case 1:
+        return ControlScreen(initialDeviceId: _selectedDeviceIdForControl);
+      case 2:
+        return const ResetWifiScreen();
+      case 3:
+        return const LogScreen();
+      default:
+        return const SizedBox.shrink();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +78,7 @@ class _MainScreenState extends State<MainScreen> {
       extendBody: true, // Allows body to go under the transparent nav bar
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
-        child: _screens[_currentIndex],
+        child: _buildScreen(_currentIndex),
       ),
       bottomNavigationBar: SafeArea(
         child: Container(
@@ -113,7 +130,7 @@ class _MainScreenState extends State<MainScreen> {
                   BottomNavigationBarItem(
                     icon: Icon(Icons.analytics_rounded),
                     activeIcon: Icon(Icons.analytics_rounded, size: 28),
-                    label: 'Info',
+                    label: 'Log',
                   ),
                 ],
               ),

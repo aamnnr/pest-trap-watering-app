@@ -1,9 +1,11 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import '../providers/device_provider.dart';
 import '../models/log_entry.dart';
+import '../theme/app_theme.dart';
 
 class LogScreen extends StatefulWidget {
   const LogScreen({super.key});
@@ -19,148 +21,657 @@ class _LogScreenState extends State<LogScreen> {
     final provider = context.watch<DeviceProvider>();
     final devices = provider.devices;
 
-    // Filter log
     final List<LogEntry> logs = _filterDeviceId == null
         ? provider.allLogs
         : provider.logsForDevice(_filterDeviceId!);
 
-    // Data grafik baterai (20 titik terakhir)
-    final batteryData = <FlSpot>[];
-    final telemetryLogs = logs
-        .where(
-          (l) =>
-              l.event == 'telemetry' &&
-              l.data != null &&
-              l.data!['bat'] != null,
-        )
-        .take(20)
-        .toList(); // ubah ke list agar bisa reversed
-    double x = 0;
-    // Mulai dari yang terlama (reversed)
-    for (final log in telemetryLogs.reversed) {
-      batteryData.add(FlSpot(x, (log.data!['bat'] as num).toDouble()));
-      x++;
+    // === LOGIKA SMART CHART BATERAI ===
+    List<LineChartBarData> chartLines = [];
+
+    if (_filterDeviceId != null) {
+      // MODE 1: SINGLE DEVICE (Desain Gradient & Ada Blok Warna Bawah)
+      final deviceLogs = logs
+          .where(
+            (l) =>
+                l.event == 'telemetry' &&
+                l.data != null &&
+                l.data!['bat'] != null,
+          )
+          .take(20)
+          .toList();
+
+      final spots = <FlSpot>[];
+      double x = 0;
+      for (final log in deviceLogs.reversed) {
+        spots.add(FlSpot(x, (log.data!['bat'] as num).toDouble()));
+        x++;
+      }
+
+      if (spots.isNotEmpty) {
+        chartLines.add(
+          LineChartBarData(
+            spots: spots,
+            isCurved: true,
+            curveSmoothness: 0.4,
+            gradient: const LinearGradient(
+              colors: [AppTheme.accentBlue, AppTheme.primaryGreen],
+            ),
+            barWidth: 4,
+            isStrokeCapRound: true,
+            belowBarData: BarAreaData(
+              show: true,
+              gradient: LinearGradient(
+                colors: [
+                  AppTheme.primaryGreen.withValues(alpha: 0.3),
+                  AppTheme.primaryGreen.withValues(alpha: 0.0),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            dotData: const FlDotData(show: false),
+          ),
+        );
+      }
+    } else {
+      // MODE 2: SEMUA DEVICE (Multi-line Chart, Tanpa Blok Warna Bawah)
+      final multiDeviceLogs = logs
+          .where(
+            (l) =>
+                l.event == 'telemetry' &&
+                l.data != null &&
+                l.data!['bat'] != null,
+          )
+          .take(60) // Ambil lebih banyak sampel untuk dibagi-bagi
+          .toList();
+
+      final Map<String, List<FlSpot>> deviceSpots = {};
+      final Map<String, double> deviceXCounter = {};
+
+      for (final log in multiDeviceLogs.reversed) {
+        deviceSpots.putIfAbsent(log.deviceId, () => []);
+        deviceXCounter.putIfAbsent(log.deviceId, () => 0);
+
+        double currentX = deviceXCounter[log.deviceId]!;
+        deviceSpots[log.deviceId]!.add(
+          FlSpot(currentX, (log.data!['bat'] as num).toDouble()),
+        );
+        deviceXCounter[log.deviceId] = currentX + 1;
+      }
+
+      final colors = [
+        AppTheme.primaryGreen,
+        AppTheme.accentBlue,
+        AppTheme.accentPurple,
+        AppTheme.warningOrange,
+      ];
+      int colorIdx = 0;
+
+      deviceSpots.forEach((deviceId, spots) {
+        if (spots.isNotEmpty) {
+          chartLines.add(
+            LineChartBarData(
+              spots: spots,
+              isCurved: true,
+              color:
+                  colors[colorIdx %
+                      colors.length], // Beri warna berbeda tiap device
+              barWidth: 3,
+              isStrokeCapRound: true,
+              belowBarData: BarAreaData(show: false), // Matikan blok warna
+              dotData: const FlDotData(show: false),
+            ),
+          );
+          colorIdx++;
+        }
+      });
     }
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Log Aktivitas'),
-        actions: [
-          DropdownButton<String>(
-            value: _filterDeviceId,
-            hint: const Text('Semua'),
-            underline: const SizedBox(),
-            items: [
-              const DropdownMenuItem(value: null, child: Text('Semua')),
-              ...devices.map(
-                (d) => DropdownMenuItem(
-                  value: d.id,
-                  child: Text(d.id.substring(0, 8)),
-                ),
-              ),
-            ],
-            onChanged: (val) => setState(() => _filterDeviceId = val),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+            child: Container(color: AppTheme.darkBg.withValues(alpha: 0.5)),
           ),
-        ],
+        ),
+        title: const Text('Info & Riwayat Log'),
+        centerTitle: true,
       ),
-      body: Column(
-        children: [
-          if (batteryData.isNotEmpty)
-            Container(
-              height: 200,
-              padding: const EdgeInsets.all(16),
-              child: LineChart(
-                LineChartData(
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: batteryData,
-                      isCurved: true,
-                      color: Colors.green,
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: Colors.green.withValues(
-                          alpha: 0.3,
-                        ), // ganti withOpacity
+      body: CustomScrollView(
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          SliverPadding(
+            padding: EdgeInsets.only(
+              top: MediaQuery.of(context).padding.top + kToolbarHeight + 16,
+            ),
+          ),
+          // Filter Device Dropdown
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Row(
+                children: [
+                  const Text(
+                    'Filter Perangkat:',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textSecondary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      decoration: BoxDecoration(
+                        color: AppTheme.surfaceBg,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _filterDeviceId,
+                          hint: const Text(
+                            'Semua',
+                            style: TextStyle(color: AppTheme.textPrimary),
+                          ),
+                          dropdownColor: AppTheme.surfaceBg,
+                          icon: const Icon(
+                            Icons.keyboard_arrow_down_rounded,
+                            color: AppTheme.primaryGreen,
+                          ),
+                          isExpanded: true,
+                          items: [
+                            const DropdownMenuItem(
+                              value: null,
+                              child: Text(
+                                'Semua',
+                                style: TextStyle(
+                                  color: AppTheme.textPrimary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            ...devices.map(
+                              (d) => DropdownMenuItem(
+                                value: d.id,
+                                child: Text(
+                                  'Device ${(d.id.length >= 6 ? d.id.substring(0, 6) : d.id).toUpperCase()}',
+                                  style: const TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                          onChanged: (val) =>
+                              setState(() => _filterDeviceId = val),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          // Battery Graph
+          if (chartLines.isNotEmpty)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 16,
+                ),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: AppTheme.cardBg,
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+                ),
+                height: 260,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(
+                            Icons.show_chart_rounded,
+                            color: AppTheme.primaryGreen,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Text(
+                          'Tren Baterai',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: AppTheme.textPrimary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+                    Expanded(
+                      child: LineChart(
+                        LineChartData(
+                          gridData: FlGridData(
+                            show: true,
+                            drawVerticalLine: false,
+                            horizontalInterval: 25,
+                            getDrawingHorizontalLine: (value) => FlLine(
+                              color: Colors.white.withValues(alpha: 0.05),
+                              strokeWidth: 1,
+                            ),
+                          ),
+                          titlesData: FlTitlesData(
+                            leftTitles: AxisTitles(
+                              sideTitles: SideTitles(
+                                showTitles: true,
+                                reservedSize: 40,
+                                getTitlesWidget: (value, meta) {
+                                  return Text(
+                                    '${value.toInt()}%',
+                                    style: const TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            bottomTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            topTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                            rightTitles: const AxisTitles(
+                              sideTitles: SideTitles(showTitles: false),
+                            ),
+                          ),
+                          borderData: FlBorderData(show: false),
+                          lineBarsData: chartLines,
+                        ),
                       ),
                     ),
                   ],
-                  titlesData: const FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 32,
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                  ),
-                  gridData: const FlGridData(show: true),
                 ),
               ),
             ),
-          Expanded(
-            child: logs.isEmpty
-                ? const Center(child: Text('Belum ada log'))
-                : ListView.builder(
-                    itemCount: logs.length,
-                    itemBuilder: (ctx, i) {
-                      final log = logs[i];
-                      String title = log.event;
-                      String subtitle = DateFormat(
-                        'dd/MM HH:mm:ss',
-                      ).format(log.timestamp);
-                      if (log.data != null) {
-                        if (log.data!.containsKey('bat'))
-                          subtitle += ' | Bat: ${log.data!['bat']}%';
-                        if (log.data!.containsKey('duration'))
-                          subtitle += ' | Durasi: ${log.data!['duration']}s';
-                        if (log.data!.containsKey('source'))
-                          subtitle += ' | Sumber: ${log.data!['source']}';
-                      }
 
-                      return ListTile(
-                        dense: true,
-                        leading: CircleAvatar(
-                          backgroundColor: _eventColor(log.event),
-                          child: Icon(
-                            _eventIcon(log.event),
-                            size: 20,
-                            color: Colors.white,
+          // App Info
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceBg.withValues(alpha: 0.5),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.05),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: AppTheme.cardBg,
+                      ),
+                      child: const Icon(
+                        Icons.info_outline_rounded,
+                        color: AppTheme.primaryGreen,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Pestzone Spray v1.0',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              color: AppTheme.textPrimary,
+                              fontSize: 16,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Broker: broker.hivemq.com',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppTheme.textSecondary.withValues(
+                                alpha: 0.8,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${logs.length} log',
+                        style: const TextStyle(
+                          color: AppTheme.primaryGreen,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+
+          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+
+          // Log List Header
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    'Riwayat Aktivitas',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: AppTheme.textPrimary,
+                    ),
+                  ),
+                  if (logs.isNotEmpty)
+                    IconButton(
+                      icon: const Icon(
+                        Icons.delete_outline_rounded,
+                        color: AppTheme.dangerRed,
+                      ),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (ctx) => AlertDialog(
+                            backgroundColor: AppTheme.cardBg,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            title: const Text(
+                              'Hapus Riwayat',
+                              style: TextStyle(color: AppTheme.textPrimary),
+                            ),
+                            content: Text(
+                              _filterDeviceId == null
+                                  ? 'Apakah Anda yakin ingin menghapus SEMUA riwayat aktivitas?'
+                                  : 'Apakah Anda yakin ingin menghapus riwayat aktivitas untuk perangkat ini?',
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                              ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(ctx),
+                                child: const Text(
+                                  'Batal',
+                                  style: TextStyle(
+                                    color: AppTheme.textSecondary,
+                                  ),
+                                ),
+                              ),
+                              ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppTheme.dangerRed,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                  ),
+                                ),
+                                onPressed: () {
+                                  context.read<DeviceProvider>().clearLogs(
+                                    deviceId: _filterDeviceId,
+                                  );
+                                  Navigator.pop(ctx);
+                                },
+                                child: const Text(
+                                  'Hapus',
+                                  style: TextStyle(color: Colors.white),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      tooltip: 'Hapus Riwayat',
+                    ),
+                ],
+              ),
+            ),
+          ),
+
+          // Log List
+          logs.isEmpty
+              ? SliverToBoxAdapter(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(40),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.history_rounded,
+                            size: 64,
+                            color: AppTheme.surfaceBg,
+                          ),
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Belum ada log aktivitas',
+                            style: TextStyle(
+                              color: AppTheme.textSecondary,
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                )
+              : SliverPadding(
+                  padding: const EdgeInsets.only(
+                    bottom: 100,
+                  ), // padding for bottom nav
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, i) {
+                      final log = logs[i];
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 6,
+                        ),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: AppTheme.cardBg,
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Colors.white.withValues(alpha: 0.02),
+                            ),
+                          ),
+                          child: ListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
+                            leading: _LogIcon(event: log.event),
+                            title: Row(
+                              children: [
+                                // Badge Device ID
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.surfaceBg,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: Colors.white.withValues(
+                                        alpha: 0.1,
+                                      ),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    log.deviceId.length >= 4
+                                        ? log.deviceId
+                                              .substring(0, 4)
+                                              .toUpperCase()
+                                        : log.deviceId.toUpperCase(),
+                                    style: const TextStyle(
+                                      color: AppTheme.textSecondary,
+                                      fontSize: 10,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                // Nama Event
+                                Text(
+                                  log.event.toUpperCase(),
+                                  style: const TextStyle(
+                                    color: AppTheme.textPrimary,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            subtitle: Text(
+                              DateFormat(
+                                'dd MMM yyyy • HH:mm:ss',
+                              ).format(log.timestamp),
+                              style: const TextStyle(
+                                color: AppTheme.textSecondary,
+                                fontSize: 12,
+                              ),
+                            ),
+                            trailing: _buildLogTrailing(log),
                           ),
                         ),
-                        title: Text(title),
-                        subtitle: Text(subtitle),
                       );
-                    },
+                    }, childCount: logs.length),
                   ),
-          ),
+                ),
         ],
       ),
     );
   }
 
-  Color _eventColor(String event) {
-    switch (event) {
-      case 'uv_on':
-        return Colors.purple;
-      case 'uv_off':
-        return Colors.grey;
-      case 'pump_on':
-        return Colors.blue;
-      case 'pump_off':
-        return Colors.grey;
-      case 'telemetry':
-        return Colors.green;
-      default:
-        return Colors.orange;
+  Widget _buildLogTrailing(LogEntry log) {
+    if (log.data == null) return const SizedBox();
+    if (log.data!.containsKey('bat')) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppTheme.warningOrange.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          '${log.data!['bat']}%',
+          style: const TextStyle(
+            color: AppTheme.warningOrange,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      );
     }
+    if (log.data!.containsKey('duration')) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+        decoration: BoxDecoration(
+          color: AppTheme.accentBlue.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Text(
+          '${log.data!['duration']}s',
+          style: const TextStyle(
+            color: AppTheme.accentBlue,
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+          ),
+        ),
+      );
+    }
+    if (log.data!.containsKey('source')) {
+      return Text(
+        '${log.data!['source']}',
+        style: const TextStyle(
+          color: AppTheme.textSecondary,
+          fontSize: 11,
+          fontStyle: FontStyle.italic,
+        ),
+      );
+    }
+    return const SizedBox();
   }
+}
 
-  IconData _eventIcon(String event) {
-    if (event.contains('uv')) return Icons.lightbulb;
-    if (event.contains('pump')) return Icons.water;
-    if (event.contains('schedule')) return Icons.schedule;
-    return Icons.info;
+class _LogIcon extends StatelessWidget {
+  final String event;
+  const _LogIcon({required this.event});
+
+  @override
+  Widget build(BuildContext context) {
+    IconData icon;
+    Color color;
+    if (event.contains('uv')) {
+      icon = Icons.lightbulb_rounded;
+      color = AppTheme.accentPurple;
+    } else if (event.contains('pump')) {
+      icon = Icons.water_drop_rounded;
+      color = AppTheme.accentBlue;
+    } else if (event.contains('schedule')) {
+      icon = Icons.schedule_rounded;
+      color = AppTheme.warningOrange;
+    } else if (event.contains('telemetry')) {
+      icon = Icons.sensors_rounded;
+      color = AppTheme.primaryGreen;
+    } else {
+      icon = Icons.circle;
+      color = AppTheme.offlineGrey;
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.15),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(icon, color: color, size: 20),
+    );
   }
 }

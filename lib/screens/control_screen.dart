@@ -5,7 +5,9 @@ import '../providers/device_provider.dart';
 import '../theme/app_theme.dart';
 
 class ControlScreen extends StatefulWidget {
-  const ControlScreen({super.key});
+  final String? initialDeviceId;
+
+  const ControlScreen({super.key, this.initialDeviceId});
 
   @override
   State<ControlScreen> createState() => _ControlScreenState();
@@ -20,6 +22,22 @@ class _ControlScreenState extends State<ControlScreen> {
   final _pumpTimeController = TextEditingController(text: '06:00'); 
   final _pumpDurationController = TextEditingController(text: '15');
   final _manualPumpDurationController = TextEditingController(text: '10');
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDeviceId = widget.initialDeviceId;
+  }
+
+  @override
+  void didUpdateWidget(ControlScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialDeviceId != oldWidget.initialDeviceId) {
+      setState(() {
+        _selectedDeviceId = widget.initialDeviceId;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -60,6 +78,12 @@ class _ControlScreenState extends State<ControlScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<DeviceProvider>();
     final devices = provider.devices;
+    
+    // Validate if the selected device still exists
+    if (_selectedDeviceId != null && !devices.any((d) => d.id == _selectedDeviceId)) {
+      _selectedDeviceId = null;
+    }
+
     final device = _selectedDeviceId != null
         ? provider.getDevice(_selectedDeviceId!)
         : null;
