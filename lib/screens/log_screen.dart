@@ -26,11 +26,24 @@ class _LogScreenState extends State<LogScreen> {
         ? provider.allLogs
         : provider.logsForDevice(_filterDeviceId!);
 
-    // === LOGIKA SMART CHART BATERAI ===
+    final Map<String, Color> deviceColors = {};
+    for (int i = 0; i < devices.length; i++) {
+      final hue = (i * 137.5) % 360;
+      deviceColors[devices[i].id] = HSLColor.fromAHSL(1.0, hue, 0.7, 0.55).toColor();
+    }
+
+    int extraIdx = devices.length;
+    for (final log in logs) {
+      if (!deviceColors.containsKey(log.deviceId)) {
+        final hue = (extraIdx * 137.5) % 360;
+        deviceColors[log.deviceId] = HSLColor.fromAHSL(1.0, hue, 0.7, 0.55).toColor();
+        extraIdx++;
+      }
+    }
+
     List<LineChartBarData> chartLines = [];
 
     if (_filterDeviceId != null) {
-      // MODE 1: SINGLE DEVICE (Desain Gradient & Ada Blok Warna Bawah)
       final deviceLogs = logs
           .where(
             (l) =>
@@ -75,7 +88,6 @@ class _LogScreenState extends State<LogScreen> {
         );
       }
     } else {
-      // MODE 2: SEMUA DEVICE (Multi-line Chart, Tanpa Blok Warna Bawah)
       final multiDeviceLogs = logs
           .where(
             (l) =>
@@ -83,7 +95,7 @@ class _LogScreenState extends State<LogScreen> {
                 l.data != null &&
                 l.data!['bat'] != null,
           )
-          .take(60) // Ambil lebih banyak sampel untuk dibagi-bagi
+          .take(60) 
           .toList();
 
       final Map<String, List<FlSpot>> deviceSpots = {};
@@ -100,30 +112,19 @@ class _LogScreenState extends State<LogScreen> {
         deviceXCounter[log.deviceId] = currentX + 1;
       }
 
-      final colors = [
-        context.colors.primaryGreen,
-        context.colors.accentBlue,
-        context.colors.accentPurple,
-        context.colors.warningOrange,
-      ];
-      int colorIdx = 0;
-
       deviceSpots.forEach((deviceId, spots) {
         if (spots.isNotEmpty) {
           chartLines.add(
             LineChartBarData(
               spots: spots,
               isCurved: true,
-              color:
-                  colors[colorIdx %
-                      colors.length], // Beri warna berbeda tiap device
+              color: deviceColors[deviceId] ?? context.colors.primaryGreen,
               barWidth: 3,
               isStrokeCapRound: true,
-              belowBarData: BarAreaData(show: false), // Matikan blok warna
+              belowBarData: BarAreaData(show: false),
               dotData: const FlDotData(show: false),
             ),
           );
-          colorIdx++;
         }
       });
     }
@@ -158,7 +159,6 @@ class _LogScreenState extends State<LogScreen> {
               top: MediaQuery.of(context).padding.top + kToolbarHeight + 16,
             ),
           ),
-          // Filter Device Dropdown
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -226,7 +226,7 @@ class _LogScreenState extends State<LogScreen> {
               ),
             ),
           ),
-          // Battery Graph
+
           if (chartLines.isNotEmpty)
             SliverToBoxAdapter(
               child: Container(
@@ -321,7 +321,6 @@ class _LogScreenState extends State<LogScreen> {
               ),
             ),
 
-          // App Info
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -399,7 +398,6 @@ class _LogScreenState extends State<LogScreen> {
 
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
 
-          // Log List Header
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -484,7 +482,6 @@ class _LogScreenState extends State<LogScreen> {
             ),
           ),
 
-          // Log List
           logs.isEmpty
               ? SliverToBoxAdapter(
                   child: Center(
@@ -514,7 +511,7 @@ class _LogScreenState extends State<LogScreen> {
               : SliverPadding(
                   padding: const EdgeInsets.only(
                     bottom: 100,
-                  ), // padding for bottom nav
+                  ),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, i) {
                       final log = logs[i];
@@ -539,17 +536,16 @@ class _LogScreenState extends State<LogScreen> {
                             leading: _LogIcon(event: log.event),
                             title: Row(
                               children: [
-                                // Badge Device ID
                                 Container(
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 8,
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: context.colors.surfaceBg,
+                                    color: (deviceColors[log.deviceId] ?? context.colors.textSecondary).withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(
-                                      color: context.colors.borderStroke,
+                                      color: (deviceColors[log.deviceId] ?? context.colors.textSecondary).withValues(alpha: 0.3),
                                     ),
                                   ),
                                   child: Text(
@@ -559,7 +555,7 @@ class _LogScreenState extends State<LogScreen> {
                                               .toUpperCase()
                                         : log.deviceId.toUpperCase(),
                                     style: TextStyle(
-                                      color: context.colors.textSecondary,
+                                      color: deviceColors[log.deviceId] ?? context.colors.textSecondary,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 0.5,
@@ -567,7 +563,6 @@ class _LogScreenState extends State<LogScreen> {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                // Nama Event
                                 Text(
                                   log.event.toUpperCase(),
                                   style: TextStyle(
