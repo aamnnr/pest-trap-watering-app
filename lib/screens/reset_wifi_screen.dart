@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/device_provider.dart';
 import '../theme/app_theme.dart';
@@ -55,7 +56,7 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
               ),
             ],
           ),
-          backgroundColor: AppTheme.primaryGreen,
+          backgroundColor: context.colors.primaryGreen,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
@@ -73,19 +74,30 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        systemOverlayStyle:
+      Theme.of(context).brightness ==
+              Brightness.dark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: ClipRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(color: AppTheme.darkBg.withValues(alpha: 0.5)),
+            child: Container(color: context.colors.bg.withValues(alpha: 0.5)),
           ),
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_rounded),
+          icon: Icon(
+            Icons.arrow_back_rounded,
+            color: context.colors.primaryGreen,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Reset WiFi'),
+        title: Text(
+          'Reset WiFi',
+          style: TextStyle(color: context.colors.textPrimary),
+        ),
         centerTitle: true,
       ),
       body: Center(
@@ -99,15 +111,15 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
           child: Container(
             padding: const EdgeInsets.all(32),
             decoration: BoxDecoration(
-              color: AppTheme.cardBg,
+              color: context.colors.cardBg,
               borderRadius: BorderRadius.circular(32),
               border: Border.all(
-                color: AppTheme.dangerRed.withValues(alpha: 0.2),
+                color: context.colors.dangerRed.withValues(alpha: 0.2),
                 width: 2,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: AppTheme.dangerRed.withValues(alpha: 0.1),
+                  color: context.colors.dangerRed.withValues(alpha: 0.1),
                   blurRadius: 30,
                   spreadRadius: 10,
                 ),
@@ -122,11 +134,13 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
                   child: Container(
                     padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
-                      color: AppTheme.dangerRed.withValues(alpha: 0.1),
+                      color: context.colors.dangerRed.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.dangerRed.withValues(alpha: 0.3),
+                          color: context.colors.dangerRed.withValues(
+                            alpha: 0.3,
+                          ),
                           blurRadius: 20,
                         ),
                       ],
@@ -134,27 +148,27 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
                     child: Icon(
                       Icons.warning_rounded,
                       size: 64,
-                      color: AppTheme.dangerRed.withValues(
+                      color: context.colors.dangerRed.withValues(
                         alpha: _isResetting ? 0.5 : 1.0,
                       ),
                     ),
                   ),
                 ),
                 const SizedBox(height: 32),
-                const Text(
+                Text(
                   'Bahaya: Reset Jaringan',
                   style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary,
+                    color: context.colors.textPrimary,
                   ),
                 ),
                 const SizedBox(height: 12),
-                const Text(
+                Text(
                   'Ini akan menghapus konfigurasi WiFi yang tersimpan. Perangkat akan terputus dari jaringan dan kembali ke mode Access Point.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: AppTheme.textSecondary,
+                    color: context.colors.textSecondary,
                     fontSize: 14,
                     height: 1.5,
                   ),
@@ -167,31 +181,31 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceBg,
+                    color: context.colors.surfaceBg,
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: DropdownButtonHideUnderline(
                     child: DropdownButton<String>(
                       value: _selectedDeviceId,
-                      hint: const Text(
+                      hint: Text(
                         'Pilih Perangkat...',
-                        style: TextStyle(color: AppTheme.textSecondary),
+                        style: TextStyle(color: context.colors.textSecondary),
                       ),
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.keyboard_arrow_down_rounded,
-                        color: AppTheme.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
                       isExpanded: true,
-                      dropdownColor: AppTheme.surfaceBg,
+                      dropdownColor: context.colors.surfaceBg,
                       items: devices
                           .map(
                             (d) => DropdownMenuItem(
                               value: d.id,
                               child: Text(
                                 'Device ${(d.id.length >= 6 ? d.id.substring(0, 6) : d.id).toUpperCase()}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontWeight: FontWeight.bold,
-                                  color: AppTheme.textPrimary,
+                                  color: context.colors.textPrimary,
                                 ),
                               ),
                             ),
@@ -209,10 +223,12 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
                   height: 60,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppTheme.dangerRed,
+                      backgroundColor: context.colors.dangerRed,
                       foregroundColor: Colors.white,
                       elevation: 8,
-                      shadowColor: AppTheme.dangerRed.withValues(alpha: 0.5),
+                      shadowColor: context.colors.dangerRed.withValues(
+                        alpha: 0.5,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(20),
                       ),
@@ -232,7 +248,11 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
                         : const Row(
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
-                              Icon(Icons.restart_alt_rounded, size: 24),
+                              Icon(
+                                Icons.restart_alt_rounded,
+                                size: 24,
+                                color: Colors.white,
+                              ),
                               SizedBox(width: 12),
                               Text(
                                 'Reset WiFi Sekarang',
@@ -240,6 +260,7 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   letterSpacing: 0.5,
+                                  color: Colors.white,
                                 ),
                               ),
                             ],
@@ -250,15 +271,15 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: AppTheme.warningOrange.withValues(alpha: 0.1),
+                    color: context.colors.warningOrange.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.info_outline_rounded,
-                        color: AppTheme.warningOrange,
+                        color: context.colors.warningOrange,
                         size: 16,
                       ),
                       const SizedBox(width: 8),
@@ -267,7 +288,7 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
                           'Setelah reset, hubungkan ke WiFi "PestzoneSpray-Setup-XXXXXX" dan buka 192.168.4.1 untuk mengatur ulang.',
                           style: TextStyle(
                             fontSize: 11,
-                            color: AppTheme.warningOrange.withValues(
+                            color: context.colors.warningOrange.withValues(
                               alpha: 0.9,
                             ),
                             height: 1.4,

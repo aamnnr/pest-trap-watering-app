@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
@@ -53,8 +54,8 @@ class _LogScreenState extends State<LogScreen> {
             spots: spots,
             isCurved: true,
             curveSmoothness: 0.4,
-            gradient: const LinearGradient(
-              colors: [AppTheme.accentBlue, AppTheme.primaryGreen],
+            gradient: LinearGradient(
+              colors: [context.colors.accentBlue, context.colors.primaryGreen],
             ),
             barWidth: 4,
             isStrokeCapRound: true,
@@ -62,8 +63,8 @@ class _LogScreenState extends State<LogScreen> {
               show: true,
               gradient: LinearGradient(
                 colors: [
-                  AppTheme.primaryGreen.withValues(alpha: 0.3),
-                  AppTheme.primaryGreen.withValues(alpha: 0.0),
+                  context.colors.primaryGreen.withValues(alpha: 0.3),
+                  context.colors.primaryGreen.withValues(alpha: 0.0),
                 ],
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
@@ -100,10 +101,10 @@ class _LogScreenState extends State<LogScreen> {
       }
 
       final colors = [
-        AppTheme.primaryGreen,
-        AppTheme.accentBlue,
-        AppTheme.accentPurple,
-        AppTheme.warningOrange,
+        context.colors.primaryGreen,
+        context.colors.accentBlue,
+        context.colors.accentPurple,
+        context.colors.warningOrange,
       ];
       int colorIdx = 0;
 
@@ -130,15 +131,23 @@ class _LogScreenState extends State<LogScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        systemOverlayStyle:
+      Theme.of(context).brightness ==
+              Brightness.dark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: ClipRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(color: AppTheme.darkBg.withValues(alpha: 0.5)),
+            child: Container(color: context.colors.bg.withValues(alpha: 0.5)),
           ),
         ),
-        title: const Text('Info & Riwayat Log'),
+        title: Text(
+          'Info & Riwayat Log',
+          style: TextStyle(color: context.colors.textPrimary),
+        ),
         centerTitle: true,
       ),
       body: CustomScrollView(
@@ -155,11 +164,11 @@ class _LogScreenState extends State<LogScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               child: Row(
                 children: [
-                  const Text(
+                  Text(
                     'Filter Perangkat:',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -167,29 +176,29 @@ class _LogScreenState extends State<LogScreen> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceBg,
+                        color: context.colors.surfaceBg,
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: DropdownButtonHideUnderline(
                         child: DropdownButton<String>(
                           value: _filterDeviceId,
-                          hint: const Text(
+                          hint: Text(
                             'Semua',
-                            style: TextStyle(color: AppTheme.textPrimary),
+                            style: TextStyle(color: context.colors.textPrimary),
                           ),
-                          dropdownColor: AppTheme.surfaceBg,
-                          icon: const Icon(
+                          dropdownColor: context.colors.surfaceBg,
+                          icon: Icon(
                             Icons.keyboard_arrow_down_rounded,
-                            color: AppTheme.primaryGreen,
+                            color: context.colors.primaryGreen,
                           ),
                           isExpanded: true,
                           items: [
-                            const DropdownMenuItem(
+                            DropdownMenuItem(
                               value: null,
                               child: Text(
                                 'Semua',
                                 style: TextStyle(
-                                  color: AppTheme.textPrimary,
+                                  color: context.colors.textPrimary,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -199,8 +208,8 @@ class _LogScreenState extends State<LogScreen> {
                                 value: d.id,
                                 child: Text(
                                   'Device ${(d.id.length >= 6 ? d.id.substring(0, 6) : d.id).toUpperCase()}',
-                                  style: const TextStyle(
-                                    color: AppTheme.textPrimary,
+                                  style: TextStyle(
+                                    color: context.colors.textPrimary,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
@@ -227,11 +236,9 @@ class _LogScreenState extends State<LogScreen> {
                 ),
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardBg,
+                  color: context.colors.cardBg,
                   borderRadius: BorderRadius.circular(28),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.05),
-                  ),
+                  border: Border.all(color: context.colors.borderStroke),
                 ),
                 height: 260,
                 child: Column(
@@ -242,22 +249,24 @@ class _LogScreenState extends State<LogScreen> {
                         Container(
                           padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                            color: context.colors.primaryGreen.withValues(
+                              alpha: 0.1,
+                            ),
                             borderRadius: BorderRadius.circular(10),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.show_chart_rounded,
-                            color: AppTheme.primaryGreen,
+                            color: context.colors.primaryGreen,
                             size: 20,
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Text(
+                        Text(
                           'Tren Baterai',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 18,
-                            color: AppTheme.textPrimary,
+                            color: context.colors.textPrimary,
                           ),
                         ),
                       ],
@@ -271,7 +280,7 @@ class _LogScreenState extends State<LogScreen> {
                             drawVerticalLine: false,
                             horizontalInterval: 25,
                             getDrawingHorizontalLine: (value) => FlLine(
-                              color: Colors.white.withValues(alpha: 0.05),
+                              color: context.colors.borderStroke,
                               strokeWidth: 1,
                             ),
                           ),
@@ -283,8 +292,8 @@ class _LogScreenState extends State<LogScreen> {
                                 getTitlesWidget: (value, meta) {
                                   return Text(
                                     '${value.toInt()}%',
-                                    style: const TextStyle(
-                                      color: AppTheme.textSecondary,
+                                    style: TextStyle(
+                                      color: context.colors.textSecondary,
                                       fontSize: 11,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -319,23 +328,21 @@ class _LogScreenState extends State<LogScreen> {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: AppTheme.surfaceBg.withValues(alpha: 0.5),
+                  color: context.colors.surfaceBg.withValues(alpha: 0.5),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.05),
-                  ),
+                  border: Border.all(color: context.colors.borderStroke),
                 ),
                 child: Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(12),
-                      decoration: const BoxDecoration(
+                      decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: AppTheme.cardBg,
+                        color: context.colors.cardBg,
                       ),
-                      child: const Icon(
+                      child: Icon(
                         Icons.info_outline_rounded,
-                        color: AppTheme.primaryGreen,
+                        color: context.colors.primaryGreen,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -343,11 +350,11 @@ class _LogScreenState extends State<LogScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
+                          Text(
                             'Pestzone Spray v1.0',
                             style: TextStyle(
                               fontWeight: FontWeight.bold,
-                              color: AppTheme.textPrimary,
+                              color: context.colors.textPrimary,
                               fontSize: 16,
                             ),
                           ),
@@ -356,7 +363,7 @@ class _LogScreenState extends State<LogScreen> {
                             'Broker: broker.hivemq.com',
                             style: TextStyle(
                               fontSize: 12,
-                              color: AppTheme.textSecondary.withValues(
+                              color: context.colors.textSecondary.withValues(
                                 alpha: 0.8,
                               ),
                             ),
@@ -370,13 +377,15 @@ class _LogScreenState extends State<LogScreen> {
                         vertical: 6,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                        color: context.colors.primaryGreen.withValues(
+                          alpha: 0.1,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         '${logs.length} log',
-                        style: const TextStyle(
-                          color: AppTheme.primaryGreen,
+                        style: TextStyle(
+                          color: context.colors.primaryGreen,
                           fontWeight: FontWeight.bold,
                           fontSize: 12,
                         ),
@@ -397,53 +406,55 @@ class _LogScreenState extends State<LogScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
+                  Text(
                     'Riwayat Aktivitas',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                   if (logs.isNotEmpty)
                     IconButton(
-                      icon: const Icon(
+                      icon: Icon(
                         Icons.delete_outline_rounded,
-                        color: AppTheme.dangerRed,
+                        color: context.colors.dangerRed,
                       ),
                       onPressed: () {
                         showDialog(
                           context: context,
                           builder: (ctx) => AlertDialog(
-                            backgroundColor: AppTheme.cardBg,
+                            backgroundColor: context.colors.cardBg,
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(20),
                             ),
-                            title: const Text(
+                            title: Text(
                               'Hapus Riwayat',
-                              style: TextStyle(color: AppTheme.textPrimary),
+                              style: TextStyle(
+                                color: context.colors.textPrimary,
+                              ),
                             ),
                             content: Text(
                               _filterDeviceId == null
                                   ? 'Apakah Anda yakin ingin menghapus SEMUA riwayat aktivitas?'
                                   : 'Apakah Anda yakin ingin menghapus riwayat aktivitas untuk perangkat ini?',
-                              style: const TextStyle(
-                                color: AppTheme.textSecondary,
+                              style: TextStyle(
+                                color: context.colors.textSecondary,
                               ),
                             ),
                             actions: [
                               TextButton(
                                 onPressed: () => Navigator.pop(ctx),
-                                child: const Text(
+                                child: Text(
                                   'Batal',
                                   style: TextStyle(
-                                    color: AppTheme.textSecondary,
+                                    color: context.colors.textSecondary,
                                   ),
                                 ),
                               ),
                               ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppTheme.dangerRed,
+                                  backgroundColor: context.colors.dangerRed,
                                   shape: RoundedRectangleBorder(
                                     borderRadius: BorderRadius.circular(12),
                                   ),
@@ -485,13 +496,13 @@ class _LogScreenState extends State<LogScreen> {
                           Icon(
                             Icons.history_rounded,
                             size: 64,
-                            color: AppTheme.surfaceBg,
+                            color: context.colors.surfaceBg,
                           ),
                           const SizedBox(height: 16),
-                          const Text(
+                          Text(
                             'Belum ada log aktivitas',
                             style: TextStyle(
-                              color: AppTheme.textSecondary,
+                              color: context.colors.textSecondary,
                               fontSize: 16,
                             ),
                           ),
@@ -514,10 +525,10 @@ class _LogScreenState extends State<LogScreen> {
                         ),
                         child: Container(
                           decoration: BoxDecoration(
-                            color: AppTheme.cardBg,
+                            color: context.colors.cardBg,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.02),
+                              color: context.colors.borderStroke,
                             ),
                           ),
                           child: ListTile(
@@ -535,12 +546,10 @@ class _LogScreenState extends State<LogScreen> {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: AppTheme.surfaceBg,
+                                    color: context.colors.surfaceBg,
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(
-                                      color: Colors.white.withValues(
-                                        alpha: 0.1,
-                                      ),
+                                      color: context.colors.borderStroke,
                                     ),
                                   ),
                                   child: Text(
@@ -549,8 +558,8 @@ class _LogScreenState extends State<LogScreen> {
                                               .substring(0, 4)
                                               .toUpperCase()
                                         : log.deviceId.toUpperCase(),
-                                    style: const TextStyle(
-                                      color: AppTheme.textSecondary,
+                                    style: TextStyle(
+                                      color: context.colors.textSecondary,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 0.5,
@@ -561,8 +570,8 @@ class _LogScreenState extends State<LogScreen> {
                                 // Nama Event
                                 Text(
                                   log.event.toUpperCase(),
-                                  style: const TextStyle(
-                                    color: AppTheme.textPrimary,
+                                  style: TextStyle(
+                                    color: context.colors.textPrimary,
                                     fontWeight: FontWeight.bold,
                                     fontSize: 14,
                                   ),
@@ -573,12 +582,12 @@ class _LogScreenState extends State<LogScreen> {
                               DateFormat(
                                 'dd MMM yyyy • HH:mm:ss',
                               ).format(log.timestamp),
-                              style: const TextStyle(
-                                color: AppTheme.textSecondary,
+                              style: TextStyle(
+                                color: context.colors.textSecondary,
                                 fontSize: 12,
                               ),
                             ),
-                            trailing: _buildLogTrailing(log),
+                            trailing: _buildLogTrailing(context, log),
                           ),
                         ),
                       );
@@ -590,19 +599,19 @@ class _LogScreenState extends State<LogScreen> {
     );
   }
 
-  Widget _buildLogTrailing(LogEntry log) {
+  Widget _buildLogTrailing(BuildContext context, LogEntry log) {
     if (log.data == null) return const SizedBox();
     if (log.data!.containsKey('bat')) {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: AppTheme.warningOrange.withValues(alpha: 0.1),
+          color: context.colors.warningOrange.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           '${log.data!['bat']}%',
-          style: const TextStyle(
-            color: AppTheme.warningOrange,
+          style: TextStyle(
+            color: context.colors.warningOrange,
             fontWeight: FontWeight.bold,
             fontSize: 12,
           ),
@@ -613,13 +622,13 @@ class _LogScreenState extends State<LogScreen> {
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
-          color: AppTheme.accentBlue.withValues(alpha: 0.1),
+          color: context.colors.accentBlue.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(12),
         ),
         child: Text(
           '${log.data!['duration']}s',
-          style: const TextStyle(
-            color: AppTheme.accentBlue,
+          style: TextStyle(
+            color: context.colors.accentBlue,
             fontWeight: FontWeight.bold,
             fontSize: 12,
           ),
@@ -629,8 +638,8 @@ class _LogScreenState extends State<LogScreen> {
     if (log.data!.containsKey('source')) {
       return Text(
         '${log.data!['source']}',
-        style: const TextStyle(
-          color: AppTheme.textSecondary,
+        style: TextStyle(
+          color: context.colors.textSecondary,
           fontSize: 11,
           fontStyle: FontStyle.italic,
         ),
@@ -650,19 +659,19 @@ class _LogIcon extends StatelessWidget {
     Color color;
     if (event.contains('uv')) {
       icon = Icons.lightbulb_rounded;
-      color = AppTheme.accentPurple;
+      color = context.colors.accentPurple;
     } else if (event.contains('pump')) {
       icon = Icons.water_drop_rounded;
-      color = AppTheme.accentBlue;
+      color = context.colors.accentBlue;
     } else if (event.contains('schedule')) {
       icon = Icons.schedule_rounded;
-      color = AppTheme.warningOrange;
+      color = context.colors.warningOrange;
     } else if (event.contains('telemetry')) {
       icon = Icons.sensors_rounded;
-      color = AppTheme.primaryGreen;
+      color = context.colors.primaryGreen;
     } else {
       icon = Icons.circle;
-      color = AppTheme.offlineGrey;
+      color = context.colors.offlineGrey;
     }
 
     return Container(

@@ -23,8 +23,20 @@ class DeviceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void refresh() {
-    notifyListeners();
+  Future<void> refresh() async {
+    try {
+      debugPrint('Refreshing MQTT connection...');
+
+      mqttService.disconnect();
+
+      await Future.delayed(const Duration(seconds: 1));
+
+      await mqttService.connect();
+
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Refresh error: $e');
+    }
   }
 
   // === HANDLE INCOMING TELEMETRY / EVENT ===
@@ -35,7 +47,6 @@ class DeviceProvider extends ChangeNotifier {
   ) {
     final now = DateTime.now();
 
-    // Update atau buat device
     Device device;
     if (_devices.containsKey(deviceId)) {
       device = _devices[deviceId]!;
@@ -45,12 +56,10 @@ class DeviceProvider extends ChangeNotifier {
     }
     device.lastSeen = now;
 
-    // Proses berdasarkan event
     if (event == 'telemetry' && data != null) {
       device.battery = data['bat'] ?? device.battery;
       device.isNight = data['is_night'] ?? device.isNight;
       device.uvOn = (data['uv'] == 1);
-      // pump status tidak selalu ada, kita biarkan dari event pump_on/off
     } else if (event == 'uv_on') {
       device.uvOn = true;
     } else if (event == 'uv_off') {
@@ -60,7 +69,6 @@ class DeviceProvider extends ChangeNotifier {
     } else if (event == 'pump_off') {
       device.pumpOn = false;
     }
-    // event lain seperti "wifi_reset", "uv_schedule_updated", dll bisa diabaikan untuk status device
 
     // Tambahkan log
     final log = LogEntry(
@@ -71,12 +79,8 @@ class DeviceProvider extends ChangeNotifier {
     );
     _logs.insert(0, log);
 
-    // Simpan log ke SharedPreferences (maks 1000 log terbaru agar tidak membengkak)
     _saveLogsToStorage();
-
-    // Simpan data perangkat agar tidak hilang saat restart
     _saveDevicesToStorage();
-
     notifyListeners();
   }
 
@@ -100,9 +104,8 @@ class DeviceProvider extends ChangeNotifier {
   Future<void> deleteDevice(String deviceId) async {
     if (_devices.containsKey(deviceId)) {
       _devices.remove(deviceId);
-      // Hapus juga log yang terkait
       _logs.removeWhere((log) => log.deviceId == deviceId);
-      
+
       await _saveDevicesToStorage();
       await _saveLogsToStorage();
       notifyListeners();
@@ -124,7 +127,6 @@ class DeviceProvider extends ChangeNotifier {
     return DateTime.now().difference(d.lastSeen!).inMinutes < 5;
   }).length;
 
-  // === GETTER STATUS MQTT ===
   bool get isMqttConnected {
     try {
       if (mqttService.client.connectionStatus == null) return false;
@@ -135,7 +137,6 @@ class DeviceProvider extends ChangeNotifier {
     }
   }
 
-  // === PENYIMPANAN LOG & DEVICE LOKAL ===
   static const _logKey = 'device_logs';
   static const _deviceKey = 'saved_devices';
 
@@ -160,7 +161,6 @@ class DeviceProvider extends ChangeNotifier {
 
   Future<void> _saveLogsToStorage() async {
     final prefs = await SharedPreferences.getInstance();
-    // Simpan maksimal 1000 log agar tidak terlalu besar
     final logsToSave = _logs.take(1000).toList();
     final jsonList = logsToSave.map((e) => e.toJson()).toList();
     prefs.setString(_logKey, jsonEncode(jsonList));

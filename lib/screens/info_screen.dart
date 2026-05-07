@@ -1,7 +1,9 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/device_provider.dart';
+import '../providers/theme_provider.dart';
 import '../theme/app_theme.dart';
 import 'reset_wifi_screen.dart';
 
@@ -11,20 +13,27 @@ class InfoScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<DeviceProvider>();
+    final themeProvider = context.watch<ThemeProvider>();
     final devices = provider.devices;
 
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: ClipRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(color: AppTheme.darkBg.withValues(alpha: 0.5)),
+            child: Container(color: context.colors.bg.withValues(alpha: 0.5)),
           ),
         ),
-        title: const Text('Pengaturan & Info'),
+        title: Text(
+          'Pengaturan & Info',
+          style: TextStyle(color: context.colors.textPrimary),
+        ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -39,52 +48,52 @@ class InfoScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // App Info Card
-            _buildSectionTitle('Info Aplikasi'),
+            _buildSectionTitle('Info Aplikasi', context),
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: AppTheme.cardBg,
+                color: context.colors.cardBg,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                border: Border.all(color: context.colors.borderStroke),
               ),
               child: Column(
                 children: [
                   Container(
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                      color: context.colors.primaryGreen.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.pest_control_rounded,
                       size: 48,
-                      color: AppTheme.primaryGreen,
+                      color: context.colors.primaryGreen,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Pestzone Spray',
                     style: TextStyle(
                       fontSize: 22,
                       fontWeight: FontWeight.bold,
-                      color: AppTheme.textPrimary,
+                      color: context.colors.textPrimary,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
+                  Text(
                     'Versi 1.0.0',
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppTheme.textSecondary,
+                      color: context.colors.textSecondary,
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
+                  Text(
                     'Aplikasi pintar untuk mengontrol dan memonitor perangkat penyiram tanaman otomatis dan perangkap hama berbasis IoT (ESP32) melalui jaringan MQTT.',
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 14,
-                      color: AppTheme.textSecondary,
+                      color: context.colors.textSecondary,
                       height: 1.5,
                     ),
                   ),
@@ -93,13 +102,66 @@ class InfoScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
-            // Network Settings
-            _buildSectionTitle('Pengaturan Koneksi'),
+            // Tampilan (Theme) Settings
+            _buildSectionTitle('Tampilan', context),
             Container(
               decoration: BoxDecoration(
-                color: AppTheme.cardBg,
+                color: context.colors.cardBg,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                border: Border.all(color: context.colors.borderStroke),
+              ),
+              child: SwitchListTile(
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 8,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                title: Text(
+                  'Mode Gelap',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: context.colors.textPrimary,
+                  ),
+                ),
+                subtitle: Text(
+                  'Gunakan tema warna gelap',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: context.colors.textSecondary,
+                  ),
+                ),
+                secondary: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: context.colors.accentPurple.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Icon(
+                    themeProvider.isDarkMode
+                        ? Icons.dark_mode_rounded
+                        : Icons.light_mode_rounded,
+                    color: context.colors.accentPurple,
+                  ),
+                ),
+                activeThumbColor: context.colors.primaryGreen,
+                value: themeProvider.isDarkMode,
+                onChanged: (bool value) {
+                  themeProvider.toggleTheme();
+                },
+              ),
+            ),
+            const SizedBox(height: 32),
+
+            // Network Settings
+            _buildSectionTitle('Pengaturan Koneksi', context),
+            Container(
+              decoration: BoxDecoration(
+                color: context.colors.cardBg,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(color: context.colors.borderStroke),
               ),
               child: Material(
                 color: Colors.transparent,
@@ -120,16 +182,18 @@ class InfoScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: AppTheme.dangerRed.withValues(alpha: 0.1),
+                            color: context.colors.dangerRed.withValues(
+                              alpha: 0.1,
+                            ),
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const Icon(
+                          child: Icon(
                             Icons.wifi_protected_setup_rounded,
-                            color: AppTheme.dangerRed,
+                            color: context.colors.dangerRed,
                           ),
                         ),
                         const SizedBox(width: 16),
-                        const Expanded(
+                        Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -138,23 +202,23 @@ class InfoScreen extends StatelessWidget {
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 16,
-                                  color: AppTheme.textPrimary,
+                                  color: context.colors.textPrimary,
                                 ),
                               ),
-                              SizedBox(height: 4),
+                              const SizedBox(height: 4),
                               Text(
                                 'Hapus pengaturan WiFi yang tersimpan pada ESP32',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: AppTheme.textSecondary,
+                                  color: context.colors.textSecondary,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const Icon(
+                        Icon(
                           Icons.chevron_right_rounded,
-                          color: AppTheme.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ],
                     ),
@@ -168,20 +232,24 @@ class InfoScreen extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _buildSectionTitle('Manajemen Perangkat', paddingBottom: 0),
+                _buildSectionTitle(
+                  'Manajemen Perangkat',
+                  context,
+                  paddingBottom: 0,
+                ),
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 10,
                     vertical: 4,
                   ),
                   decoration: BoxDecoration(
-                    color: AppTheme.surfaceBg,
+                    color: context.colors.surfaceBg,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
                     '${devices.length}',
-                    style: const TextStyle(
-                      color: AppTheme.primaryGreen,
+                    style: TextStyle(
+                      color: context.colors.primaryGreen,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -193,16 +261,14 @@ class InfoScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardBg,
+                  color: context.colors.cardBg,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.05),
-                  ),
+                  border: Border.all(color: context.colors.borderStroke),
                 ),
-                child: const Center(
+                child: Center(
                   child: Text(
                     'Tidak ada perangkat tersimpan.',
-                    style: TextStyle(color: AppTheme.textSecondary),
+                    style: TextStyle(color: context.colors.textSecondary),
                   ),
                 ),
               )
@@ -212,7 +278,8 @@ class InfoScreen extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 padding: EdgeInsets.zero,
                 itemCount: devices.length,
-                separatorBuilder: (context, index) => const SizedBox(height: 12),
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
                 itemBuilder: (context, index) {
                   final device = devices[index];
                   final shortId = device.id.length >= 6
@@ -221,11 +288,9 @@ class InfoScreen extends StatelessWidget {
 
                   return Container(
                     decoration: BoxDecoration(
-                      color: AppTheme.cardBg,
+                      color: context.colors.cardBg,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: Colors.white.withValues(alpha: 0.05),
-                      ),
+                      border: Border.all(color: context.colors.borderStroke),
                     ),
                     child: ListTile(
                       contentPadding: const EdgeInsets.symmetric(
@@ -235,32 +300,33 @@ class InfoScreen extends StatelessWidget {
                       leading: Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppTheme.surfaceBg,
+                          color: context.colors.surfaceBg,
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.router_rounded,
-                          color: AppTheme.primaryGreen,
+                          color: context.colors.primaryGreen,
                         ),
                       ),
                       title: Text(
                         'Device $shortId',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontWeight: FontWeight.bold,
-                          color: AppTheme.textPrimary,
+                          color: context.colors.textPrimary,
                         ),
                       ),
                       subtitle: Text(
                         'ID: ${device.id}',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 12,
-                          color: AppTheme.textSecondary,
+                          color: context.colors.textSecondary,
                         ),
                       ),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline_rounded),
-                        color: AppTheme.dangerRed,
-                        onPressed: () => _confirmDelete(context, device.id, shortId),
+                        color: context.colors.dangerRed,
+                        onPressed: () =>
+                            _confirmDelete(context, device.id, shortId),
                       ),
                     ),
                   );
@@ -272,15 +338,19 @@ class InfoScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionTitle(String title, {double paddingBottom = 16}) {
+  Widget _buildSectionTitle(
+    String title,
+    BuildContext context, {
+    double paddingBottom = 16,
+  }) {
     return Padding(
       padding: EdgeInsets.only(bottom: paddingBottom),
       child: Text(
         title,
-        style: const TextStyle(
+        style: TextStyle(
           fontSize: 18,
           fontWeight: FontWeight.bold,
-          color: AppTheme.textPrimary,
+          color: context.colors.textPrimary,
         ),
       ),
     );
@@ -294,29 +364,27 @@ class InfoScreen extends StatelessWidget {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        backgroundColor: AppTheme.cardBg,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
-        ),
-        title: const Text(
+        backgroundColor: context.colors.cardBg,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        title: Text(
           'Hapus Perangkat',
-          style: TextStyle(color: AppTheme.textPrimary),
+          style: TextStyle(color: context.colors.textPrimary),
         ),
         content: Text(
           'Apakah Anda yakin ingin menghapus Device $shortId dari aplikasi? Semua log terkait juga akan dihapus.',
-          style: const TextStyle(color: AppTheme.textSecondary),
+          style: TextStyle(color: context.colors.textSecondary),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text(
+            child: Text(
               'Batal',
-              style: TextStyle(color: AppTheme.textSecondary),
+              style: TextStyle(color: context.colors.textSecondary),
             ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppTheme.dangerRed,
+              backgroundColor: context.colors.dangerRed,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -333,7 +401,7 @@ class InfoScreen extends StatelessWidget {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('Device $shortId berhasil dihapus.'),
-          backgroundColor: AppTheme.primaryGreen,
+          backgroundColor: context.colors.primaryGreen,
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),

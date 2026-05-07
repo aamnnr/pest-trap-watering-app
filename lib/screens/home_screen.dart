@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../providers/device_provider.dart';
@@ -21,27 +22,42 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        systemOverlayStyle:
+      Theme.of(context).brightness ==
+              Brightness.dark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: ClipRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(color: AppTheme.darkBg.withValues(alpha: 0.5)),
+            child: Container(color: context.colors.bg.withValues(alpha: 0.5)),
           ),
         ),
         title: const Text('Pestzone Spray'),
         centerTitle: true,
         actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: Icon(
+              isMqttConnected ? Icons.cloud_done : Icons.cloud_off,
+              color: isMqttConnected ? Colors.green : Colors.red,
+            ),
+          ),
+
           IconButton(
             icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => provider.refresh(),
+            onPressed: () async {
+              await provider.refresh();
+            },
           ),
         ],
       ),
       body: RefreshIndicator(
         onRefresh: () async => provider.refresh(),
-        color: AppTheme.primaryGreen,
-        backgroundColor: AppTheme.cardBg,
+        color: context.colors.primaryGreen,
+        backgroundColor: context.colors.cardBg,
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
@@ -68,7 +84,7 @@ class HomeScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryGreen.withValues(
+                              color: context.colors.primaryGreen.withValues(
                                 alpha: 0.3,
                               ),
                               blurRadius: 16,
@@ -127,12 +143,11 @@ class HomeScreen extends StatelessWidget {
                       child: Container(
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          // Anda dapat mengubah warna gradient ini jika ingin membedakannya
                           gradient: AppTheme.primaryGradient,
                           borderRadius: BorderRadius.circular(24),
                           boxShadow: [
                             BoxShadow(
-                              color: AppTheme.primaryGreen.withValues(
+                              color: context.colors.primaryGreen.withValues(
                                 alpha: 0.3,
                               ),
                               blurRadius: 16,
@@ -158,7 +173,6 @@ class HomeScreen extends StatelessWidget {
                                     size: 24,
                                   ),
                                 ),
-                                // Asumsi variabel isMqttConnected bernilai boolean
                                 if (isMqttConnected)
                                   const PulsingIndicator(color: Colors.white),
                               ],
@@ -197,16 +211,16 @@ class HomeScreen extends StatelessWidget {
                   children: [
                     Icon(
                       Icons.widgets_rounded,
-                      color: AppTheme.textSecondary,
+                      color: context.colors.textSecondary,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
-                    const Text(
+                    Text(
                       'Perangkat Terhubung',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
-                        color: AppTheme.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     const Spacer(),
@@ -216,13 +230,13 @@ class HomeScreen extends StatelessWidget {
                         vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppTheme.surfaceBg,
+                        color: context.colors.surfaceBg,
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
                         '${devices.length}',
-                        style: const TextStyle(
-                          color: AppTheme.primaryGreen,
+                        style: TextStyle(
+                          color: context.colors.primaryGreen,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -243,22 +257,24 @@ class HomeScreen extends StatelessWidget {
                             Icon(
                               Icons.sensors_off_rounded,
                               size: 80,
-                              color: AppTheme.surfaceBg,
+                              color: context.colors.surfaceBg,
                             ),
                             const SizedBox(height: 24),
-                            const Text(
+                            Text(
                               'Tidak ada perangkat',
                               style: TextStyle(
-                                color: AppTheme.textPrimary,
+                                color: context.colors.textPrimary,
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
                               ),
                             ),
                             const SizedBox(height: 8),
-                            const Text(
+                            Text(
                               'Nyalakan ESP32 dan hubungkan ke MQTT.',
                               textAlign: TextAlign.center,
-                              style: TextStyle(color: AppTheme.textSecondary),
+                              style: TextStyle(
+                                color: context.colors.textSecondary,
+                              ),
                             ),
                           ],
                         ),
@@ -291,7 +307,7 @@ class HomeScreen extends StatelessWidget {
 class DeviceCard extends StatelessWidget {
   final Device device;
   final VoidCallback? onTap;
-  
+
   const DeviceCard({super.key, required this.device, this.onTap});
 
   @override
@@ -310,12 +326,12 @@ class DeviceCard extends StatelessWidget {
         onTap: onTap,
         child: Container(
           decoration: BoxDecoration(
-            color: AppTheme.cardBg,
+            color: context.colors.cardBg,
             borderRadius: BorderRadius.circular(24),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+            border: Border.all(color: context.colors.borderStroke),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.2),
+                color: Colors.black.withValues(alpha: 0.1),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
@@ -325,151 +341,161 @@ class DeviceCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(24),
             child: Stack(
               children: [
-              // Glassmorphism accent glow
-              Positioned(
-                top: -20,
-                right: -20,
-                child: Container(
-                  width: 100,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color:
-                        (isOnline ? AppTheme.onlineGreen : AppTheme.offlineGrey)
-                            .withValues(alpha: 0.1),
-                  ),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-                    child: Container(color: Colors.transparent),
+                // Glassmorphism accent glow
+                Positioned(
+                  top: -20,
+                  right: -20,
+                  child: Container(
+                    width: 100,
+                    height: 100,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color:
+                          (isOnline
+                                  ? context.colors.onlineGreen
+                                  : context.colors.offlineGrey)
+                              .withValues(alpha: 0.1),
+                    ),
+                    child: BackdropFilter(
+                      filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+                      child: Container(color: Colors.transparent),
+                    ),
                   ),
                 ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        // Status Indicator
-                        Container(
-                          width: 10,
-                          height: 10,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: isOnline
-                                ? AppTheme.onlineGreen
-                                : AppTheme.offlineGrey,
-                            boxShadow: isOnline
-                                ? [
-                                    BoxShadow(
-                                      color: AppTheme.onlineGreen.withValues(
-                                        alpha: 0.6,
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          // Status Indicator
+                          Container(
+                            width: 10,
+                            height: 10,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isOnline
+                                  ? context.colors.onlineGreen
+                                  : context.colors.offlineGrey,
+                              boxShadow: isOnline
+                                  ? [
+                                      BoxShadow(
+                                        color: context.colors.onlineGreen
+                                            .withValues(alpha: 0.6),
+                                        blurRadius: 8,
                                       ),
-                                      blurRadius: 8,
-                                    ),
-                                  ]
-                                : [],
+                                    ]
+                                  : [],
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Text(
-                          'Device ${(device.id.length >= 6 ? device.id.substring(0, 6) : device.id).toUpperCase()}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 18,
-                            color: AppTheme.textPrimary,
+                          const SizedBox(width: 12),
+                          Text(
+                            'Device ${(device.id.length >= 6 ? device.id.substring(0, 6) : device.id).toUpperCase()}',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: context.colors.textPrimary,
+                            ),
                           ),
-                        ),
-                        const Spacer(),
-                        // Battery
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: getBatteryColor(
-                              device.battery,
-                            ).withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(
-                                getBatteryIcon(device.battery),
-                                color: getBatteryColor(device.battery),
-                                size: 16,
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${device.battery}%',
-                                style: TextStyle(
-                                  color: getBatteryColor(device.battery),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 12,
+                          const Spacer(),
+                          // Battery
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: getBatteryColor(
+                                context,
+                                device.battery,
+                              ).withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  getBatteryIcon(device.battery),
+                                  color: getBatteryColor(
+                                    context,
+                                    device.battery,
+                                  ),
+                                  size: 16,
                                 ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '${device.battery}%',
+                                  style: TextStyle(
+                                    color: getBatteryColor(
+                                      context,
+                                      device.battery,
+                                    ),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Quick Controls
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _QuickControlButton(
+                              icon: Icons.lightbulb_rounded,
+                              label: 'UV Light',
+                              isOn: device.uvOn,
+                              color: context.colors.accentPurple,
+                              onToggle: (val) => provider.sendCommand(
+                                device.id,
+                                {'uv_action': val ? 'ON' : 'OFF'},
                               ),
-                            ],
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Quick Controls
-                    Row(
-                      children: [
-                        Expanded(
-                          child: _QuickControlButton(
-                            icon: Icons.lightbulb_rounded,
-                            label: 'UV Light',
-                            isOn: device.uvOn,
-                            color: AppTheme.accentPurple,
-                            onToggle: (val) => provider.sendCommand(device.id, {
-                              'uv_action': val ? 'ON' : 'OFF',
-                            }),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: _QuickControlButton(
+                              icon: Icons.water_drop_rounded,
+                              label: 'Pump',
+                              isOn: device.pumpOn,
+                              color: context.colors.accentBlue,
+                              onToggle: (val) => provider.sendCommand(
+                                device.id,
+                                {'pump_action': val ? 'ON' : 'OFF'},
+                              ),
+                            ),
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: _QuickControlButton(
-                            icon: Icons.water_drop_rounded,
-                            label: 'Pump',
-                            isOn: device.pumpOn,
-                            color: AppTheme.accentBlue,
-                            onToggle: (val) => provider.sendCommand(device.id, {
-                              'pump_action': val ? 'ON' : 'OFF',
-                            }),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      // Footer details
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.history_rounded,
+                            size: 14,
+                            color: context.colors.textSecondary,
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Footer details
-                    Row(
-                      children: [
-                        Icon(
-                          Icons.history_rounded,
-                          size: 14,
-                          color: AppTheme.textSecondary,
-                        ),
-                        const SizedBox(width: 4),
-                        Text(
-                          'Sync: $lastSeenStr',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: AppTheme.textSecondary,
+                          const SizedBox(width: 4),
+                          Text(
+                            'Sync: $lastSeenStr',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: context.colors.textSecondary,
+                            ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
-      ),
       ),
     );
   }
@@ -481,10 +507,10 @@ class DeviceCard extends StatelessWidget {
     return Icons.battery_0_bar_rounded;
   }
 
-  Color getBatteryColor(int level) {
-    if (level > 50) return AppTheme.onlineGreen;
-    if (level > 20) return AppTheme.warningOrange;
-    return AppTheme.dangerRed;
+  Color getBatteryColor(BuildContext context, int level) {
+    if (level > 50) return context.colors.onlineGreen;
+    if (level > 20) return context.colors.warningOrange;
+    return context.colors.dangerRed;
   }
 }
 
@@ -512,7 +538,9 @@ class _QuickControlButton extends StatelessWidget {
         curve: Curves.easeOutCubic,
         padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
         decoration: BoxDecoration(
-          color: isOn ? color.withValues(alpha: 0.15) : AppTheme.surfaceBg,
+          color: isOn
+              ? color.withValues(alpha: 0.15)
+              : context.colors.surfaceBg,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isOn ? color.withValues(alpha: 0.5) : Colors.transparent,
@@ -524,7 +552,7 @@ class _QuickControlButton extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(8),
               decoration: BoxDecoration(
-                color: isOn ? color : AppTheme.cardBg,
+                color: isOn ? color : context.colors.cardBg,
                 shape: BoxShape.circle,
                 boxShadow: isOn
                     ? [
@@ -537,7 +565,7 @@ class _QuickControlButton extends StatelessWidget {
               ),
               child: Icon(
                 icon,
-                color: isOn ? Colors.white : AppTheme.textSecondary,
+                color: isOn ? Colors.white : context.colors.textSecondary,
                 size: 18,
               ),
             ),
@@ -551,8 +579,8 @@ class _QuickControlButton extends StatelessWidget {
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: isOn
-                          ? AppTheme.textPrimary
-                          : AppTheme.textSecondary,
+                          ? context.colors.textPrimary
+                          : context.colors.textSecondary,
                       fontSize: 13,
                     ),
                   ),
@@ -561,7 +589,7 @@ class _QuickControlButton extends StatelessWidget {
                     style: TextStyle(
                       color: isOn
                           ? color
-                          : AppTheme.textSecondary.withValues(alpha: 0.5),
+                          : context.colors.textSecondary.withValues(alpha: 0.5),
                       fontSize: 11,
                       fontWeight: FontWeight.w600,
                     ),

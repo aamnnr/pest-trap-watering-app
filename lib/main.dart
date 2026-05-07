@@ -1,8 +1,10 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'services/mqtt_service.dart';
 import 'providers/device_provider.dart';
+import 'providers/theme_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/control_screen.dart';
@@ -11,6 +13,9 @@ import 'screens/log_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setEnabledSystemUIMode(
+    SystemUiMode.edgeToEdge,
+  );
   final mqttService = MqttService();
   mqttService.connect();
 
@@ -18,6 +23,7 @@ void main() async {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => DeviceProvider(mqttService)),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: const MyApp(),
     ),
@@ -29,11 +35,20 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Pestzone Spray',
-      theme: AppTheme.darkTheme,
-      home: const MainScreen(),
-      debugShowCheckedModeBanner: false,
+    final themeProvider = context.watch<ThemeProvider>();
+
+    final isDark = themeProvider.themeMode == ThemeMode.dark;
+
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: isDark ? SystemUiOverlayStyle.light : SystemUiOverlayStyle.dark,
+      child: MaterialApp(
+        title: 'Pestzone Spray',
+        theme: AppTheme.lightTheme,
+        darkTheme: AppTheme.darkTheme,
+        themeMode: themeProvider.themeMode,
+        home: const MainScreen(),
+        debugShowCheckedModeBanner: false,
+      ),
     );
   }
 }
@@ -57,7 +72,7 @@ class _MainScreenState extends State<MainScreen> {
           onDeviceTap: (deviceId) {
             setState(() {
               _selectedDeviceIdForControl = deviceId;
-              _currentIndex = 1; // Navigasi ke ControlScreen
+              _currentIndex = 1;
             });
           },
         );
@@ -75,7 +90,7 @@ class _MainScreenState extends State<MainScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      extendBody: true, // Allows body to go under the transparent nav bar
+      extendBody: true,
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         child: _buildScreen(_currentIndex),
@@ -84,7 +99,7 @@ class _MainScreenState extends State<MainScreen> {
         child: Container(
           margin: const EdgeInsets.fromLTRB(24, 0, 24, 16),
           decoration: BoxDecoration(
-            color: AppTheme.cardBg.withValues(alpha: 0.8),
+            color: context.colors.cardBg.withValues(alpha: 0.8),
             borderRadius: BorderRadius.circular(32),
             boxShadow: [
               BoxShadow(
@@ -104,8 +119,8 @@ class _MainScreenState extends State<MainScreen> {
                 type: BottomNavigationBarType.fixed,
                 backgroundColor: Colors.transparent,
                 elevation: 0,
-                selectedItemColor: AppTheme.primaryGreen,
-                unselectedItemColor: AppTheme.textSecondary,
+                selectedItemColor: context.colors.primaryGreen,
+                unselectedItemColor: context.colors.textSecondary,
                 showSelectedLabels: true,
                 showUnselectedLabels: false,
                 items: const [
@@ -126,10 +141,7 @@ class _MainScreenState extends State<MainScreen> {
                   ),
                   BottomNavigationBarItem(
                     icon: Icon(Icons.settings_rounded),
-                    activeIcon: Icon(
-                      Icons.settings_rounded,
-                      size: 28,
-                    ),
+                    activeIcon: Icon(Icons.settings_rounded, size: 28),
                     label: 'Pengaturan',
                   ),
                 ],

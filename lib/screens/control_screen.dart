@@ -1,5 +1,6 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../providers/device_provider.dart';
 import '../theme/app_theme.dart';
@@ -15,11 +16,11 @@ class ControlScreen extends StatefulWidget {
 
 class _ControlScreenState extends State<ControlScreen> {
   String? _selectedDeviceId;
-  
+
   // Menggunakan default value format HH:mm
   final _uvStartController = TextEditingController(text: '18:00');
   final _uvStopController = TextEditingController(text: '23:00');
-  final _pumpTimeController = TextEditingController(text: '06:00'); 
+  final _pumpTimeController = TextEditingController(text: '06:00');
   final _pumpDurationController = TextEditingController(text: '15');
   final _manualPumpDurationController = TextEditingController(text: '10');
 
@@ -50,7 +51,10 @@ class _ControlScreenState extends State<ControlScreen> {
   }
 
   // Fungsi untuk memunculkan dialog TimePicker
-  Future<void> _selectTime(BuildContext context, TextEditingController controller) async {
+  Future<void> _selectTime(
+    BuildContext context,
+    TextEditingController controller,
+  ) async {
     TimeOfDay initial = TimeOfDay.now();
     if (controller.text.contains(':')) {
       final parts = controller.text.split(':');
@@ -78,9 +82,10 @@ class _ControlScreenState extends State<ControlScreen> {
   Widget build(BuildContext context) {
     final provider = context.watch<DeviceProvider>();
     final devices = provider.devices;
-    
+
     // Validate if the selected device still exists
-    if (_selectedDeviceId != null && !devices.any((d) => d.id == _selectedDeviceId)) {
+    if (_selectedDeviceId != null &&
+        !devices.any((d) => d.id == _selectedDeviceId)) {
       _selectedDeviceId = null;
     }
 
@@ -91,15 +96,23 @@ class _ControlScreenState extends State<ControlScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        systemOverlayStyle:
+      Theme.of(context).brightness ==
+              Brightness.dark
+          ? SystemUiOverlayStyle.light
+          : SystemUiOverlayStyle.dark,
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: ClipRect(
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-            child: Container(color: AppTheme.darkBg.withValues(alpha: 0.5)),
+            child: Container(color: context.colors.bg.withValues(alpha: 0.5)),
           ),
         ),
-        title: const Text('Kontrol & Penjadwalan'),
+        title: Text(
+          'Kontrol & Penjadwalan',
+          style: TextStyle(color: context.colors.textPrimary),
+        ),
         centerTitle: true,
       ),
       body: SingleChildScrollView(
@@ -117,9 +130,9 @@ class _ControlScreenState extends State<ControlScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: AppTheme.cardBg,
+                color: context.colors.cardBg,
                 borderRadius: BorderRadius.circular(24),
-                border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+                border: Border.all(color: context.colors.borderStroke),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -129,21 +142,23 @@ class _ControlScreenState extends State<ControlScreen> {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: AppTheme.primaryGreen.withValues(alpha: 0.1),
+                          color: context.colors.primaryGreen.withValues(
+                            alpha: 0.1,
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(
+                        child: Icon(
                           Icons.router_rounded,
-                          color: AppTheme.primaryGreen,
+                          color: context.colors.primaryGreen,
                         ),
                       ),
                       const SizedBox(width: 16),
-                      const Text(
+                      Text(
                         'Pilih Perangkat',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
-                          color: AppTheme.textPrimary,
+                          color: context.colors.textPrimary,
                         ),
                       ),
                     ],
@@ -153,20 +168,21 @@ class _ControlScreenState extends State<ControlScreen> {
                     initialValue: _selectedDeviceId,
                     decoration: InputDecoration(
                       hintText: 'Pilih perangkat...',
-                      prefixIcon: const Icon(
+                      hintStyle: TextStyle(color: context.colors.textSecondary),
+                      prefixIcon: Icon(
                         Icons.sensors_rounded,
-                        color: AppTheme.textSecondary,
+                        color: context.colors.textSecondary,
                       ),
-                      fillColor: AppTheme.surfaceBg,
+                      fillColor: context.colors.surfaceBg,
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(16),
                         borderSide: BorderSide.none,
                       ),
                     ),
-                    dropdownColor: AppTheme.surfaceBg,
-                    icon: const Icon(
+                    dropdownColor: context.colors.surfaceBg,
+                    icon: Icon(
                       Icons.keyboard_arrow_down_rounded,
-                      color: AppTheme.primaryGreen,
+                      color: context.colors.primaryGreen,
                     ),
                     items: devices
                         .map(
@@ -174,8 +190,9 @@ class _ControlScreenState extends State<ControlScreen> {
                             value: d.id,
                             child: Text(
                               'Device ${(d.id.length >= 6 ? d.id.substring(0, 6) : d.id).toUpperCase()}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w600,
+                                color: context.colors.textPrimary,
                               ),
                             ),
                           ),
@@ -193,11 +210,9 @@ class _ControlScreenState extends State<ControlScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardBg,
+                  color: context.colors.cardBg,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.05),
-                  ),
+                  border: Border.all(color: context.colors.borderStroke),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -206,29 +221,29 @@ class _ControlScreenState extends State<ControlScreen> {
                       icon: Icons.lightbulb_rounded,
                       label: 'UV Light',
                       isOn: device.uvOn,
-                      color: AppTheme.accentPurple,
+                      color: context.colors.accentPurple,
                     ),
                     Container(
                       width: 1,
                       height: 40,
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: context.colors.borderStroke,
                     ),
                     _StatusItem(
                       icon: Icons.water_drop_rounded,
                       label: 'Water Pump',
                       isOn: device.pumpOn,
-                      color: AppTheme.accentBlue,
+                      color: context.colors.accentBlue,
                     ),
                     Container(
                       width: 1,
                       height: 40,
-                      color: Colors.white.withValues(alpha: 0.1),
+                      color: context.colors.borderStroke,
                     ),
                     _StatusItem(
                       icon: Icons.battery_charging_full_rounded,
                       label: 'Baterai',
                       value: '${device.battery}%',
-                      color: AppTheme.warningOrange,
+                      color: context.colors.warningOrange,
                     ),
                   ],
                 ),
@@ -236,12 +251,12 @@ class _ControlScreenState extends State<ControlScreen> {
               const SizedBox(height: 28),
 
               // Section: Kontrol Manual
-              const Text(
+              Text(
                 'Kontrol Manual',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -252,7 +267,7 @@ class _ControlScreenState extends State<ControlScreen> {
                       icon: Icons.lightbulb_rounded,
                       label: 'UV Light',
                       isOn: device.uvOn,
-                      color: AppTheme.accentPurple,
+                      color: context.colors.accentPurple,
                       onToggle: (val) => provider.sendCommand(device.id, {
                         'uv_action': val ? 'ON' : 'OFF',
                       }),
@@ -264,7 +279,7 @@ class _ControlScreenState extends State<ControlScreen> {
                       icon: Icons.water_drop_rounded,
                       label: 'Water Pump',
                       isOn: device.pumpOn,
-                      color: AppTheme.accentBlue,
+                      color: context.colors.accentBlue,
                       onToggle: (val) => provider.sendCommand(device.id, {
                         'pump_action': val ? 'ON' : 'OFF',
                       }),
@@ -278,21 +293,19 @@ class _ControlScreenState extends State<ControlScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: AppTheme.cardBg,
+                  color: context.colors.cardBg,
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.05),
-                  ),
+                  border: Border.all(color: context.colors.borderStroke),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
+                    Text(
                       'Penyiraman Khusus',
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: AppTheme.textPrimary,
+                        color: context.colors.textPrimary,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -303,6 +316,7 @@ class _ControlScreenState extends State<ControlScreen> {
                             'Durasi (detik)',
                             _manualPumpDurationController,
                             Icons.timer_rounded,
+                            context,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -319,7 +333,7 @@ class _ControlScreenState extends State<ControlScreen> {
                             });
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: AppTheme.accentBlue,
+                            backgroundColor: context.colors.accentBlue,
                             padding: const EdgeInsets.all(16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(16),
@@ -339,12 +353,12 @@ class _ControlScreenState extends State<ControlScreen> {
               const SizedBox(height: 32),
 
               // Section: Penjadwalan
-              const Text(
+              Text(
                 'Penjadwalan Otomatis',
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
-                  color: AppTheme.textPrimary,
+                  color: context.colors.textPrimary,
                 ),
               ),
               const SizedBox(height: 16),
@@ -353,7 +367,7 @@ class _ControlScreenState extends State<ControlScreen> {
               _ScheduleCard(
                 icon: Icons.wb_sunny_rounded,
                 title: 'Jadwal UV Light',
-                color: AppTheme.accentPurple,
+                color: context.colors.accentPurple,
                 children: [
                   Row(
                     children: [
@@ -363,6 +377,7 @@ class _ControlScreenState extends State<ControlScreen> {
                           _uvStartController,
                           Icons.wb_twilight_rounded,
                           () => _selectTime(context, _uvStartController),
+                          context,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -372,6 +387,7 @@ class _ControlScreenState extends State<ControlScreen> {
                           _uvStopController,
                           Icons.nights_stay_rounded,
                           () => _selectTime(context, _uvStopController),
+                          context,
                         ),
                       ),
                     ],
@@ -380,19 +396,30 @@ class _ControlScreenState extends State<ControlScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      icon: const Icon(Icons.save_rounded),
-                      label: const Text('Simpan Jadwal UV'),
+                      icon: const Icon(Icons.save_rounded, color: Colors.white),
+                      label: const Text(
+                        'Simpan Jadwal UV',
+                        style: TextStyle(color: Colors.white),
+                      ),
                       onPressed: () {
                         // ESP32 hanya butuh parameter jam dalam integer
-                        int start = int.tryParse(_uvStartController.text.split(':')[0]) ?? 18;
-                        int stop = int.tryParse(_uvStopController.text.split(':')[0]) ?? 23;
+                        int start =
+                            int.tryParse(
+                              _uvStartController.text.split(':')[0],
+                            ) ??
+                            18;
+                        int stop =
+                            int.tryParse(
+                              _uvStopController.text.split(':')[0],
+                            ) ??
+                            23;
                         provider.sendCommand(device.id, {
                           'uv_start': start,
                           'uv_stop': stop,
                         });
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.accentPurple,
+                        backgroundColor: context.colors.accentPurple,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                     ),
@@ -405,7 +432,7 @@ class _ControlScreenState extends State<ControlScreen> {
               _ScheduleCard(
                 icon: Icons.water_rounded,
                 title: 'Jadwal Penyiraman',
-                color: AppTheme.accentBlue,
+                color: context.colors.accentBlue,
                 children: [
                   Row(
                     children: [
@@ -416,6 +443,7 @@ class _ControlScreenState extends State<ControlScreen> {
                           _pumpTimeController,
                           Icons.access_time_rounded,
                           () => _selectTime(context, _pumpTimeController),
+                          context,
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -425,6 +453,7 @@ class _ControlScreenState extends State<ControlScreen> {
                           'Durasi (s)',
                           _pumpDurationController,
                           null,
+                          context,
                         ),
                       ),
                     ],
@@ -433,8 +462,11 @@ class _ControlScreenState extends State<ControlScreen> {
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton.icon(
-                      icon: const Icon(Icons.save_rounded),
-                      label: const Text('Simpan Jadwal Pompa'),
+                      icon: const Icon(Icons.save_rounded, color: Colors.white),
+                      label: const Text(
+                        'Simpan Jadwal Pompa',
+                        style: TextStyle(color: Colors.white),
+                      ),
                       onPressed: () {
                         final parts = _pumpTimeController.text.split(':');
                         int h = int.tryParse(parts[0]) ?? 6;
@@ -450,7 +482,7 @@ class _ControlScreenState extends State<ControlScreen> {
                         });
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: AppTheme.accentBlue,
+                        backgroundColor: context.colors.accentBlue,
                         padding: const EdgeInsets.symmetric(vertical: 16),
                       ),
                     ),
@@ -465,14 +497,14 @@ class _ControlScreenState extends State<ControlScreen> {
                     Icon(
                       Icons.sensors_off_rounded,
                       size: 80,
-                      color: AppTheme.surfaceBg,
+                      color: context.colors.surfaceBg,
                     ),
                     const SizedBox(height: 24),
-                    const Text(
+                    Text(
                       'Belum ada perangkat terhubung',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: AppTheme.textSecondary,
+                        color: context.colors.textSecondary,
                         fontSize: 16,
                       ),
                     ),
@@ -490,17 +522,22 @@ class _ControlScreenState extends State<ControlScreen> {
     String label,
     TextEditingController controller,
     IconData? icon,
+    BuildContext context,
   ) {
     return TextField(
       controller: controller,
       keyboardType: TextInputType.number,
-      style: const TextStyle(fontWeight: FontWeight.bold),
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: context.colors.textPrimary,
+      ),
       decoration: InputDecoration(
         labelText: label,
+        labelStyle: TextStyle(color: context.colors.textSecondary),
         prefixIcon: icon != null
-            ? Icon(icon, size: 20, color: AppTheme.textSecondary)
+            ? Icon(icon, size: 20, color: context.colors.textSecondary)
             : null,
-        fillColor: AppTheme.surfaceBg,
+        fillColor: context.colors.surfaceBg,
       ),
     );
   }
@@ -511,16 +548,21 @@ class _ControlScreenState extends State<ControlScreen> {
     TextEditingController controller,
     IconData icon,
     VoidCallback onTap,
+    BuildContext context,
   ) {
     return TextField(
       controller: controller,
       readOnly: true,
       onTap: onTap,
-      style: const TextStyle(fontWeight: FontWeight.bold),
+      style: TextStyle(
+        fontWeight: FontWeight.bold,
+        color: context.colors.textPrimary,
+      ),
       decoration: InputDecoration(
         labelText: label,
-        prefixIcon: Icon(icon, size: 20, color: AppTheme.textSecondary),
-        fillColor: AppTheme.surfaceBg,
+        labelStyle: TextStyle(color: context.colors.textSecondary),
+        prefixIcon: Icon(icon, size: 20, color: context.colors.textSecondary),
+        fillColor: context.colors.surfaceBg,
       ),
     );
   }
@@ -547,7 +589,9 @@ class _StatusItem extends StatelessWidget {
       children: [
         Icon(
           icon,
-          color: isOn != null ? (isOn! ? color : AppTheme.offlineGrey) : color,
+          color: isOn != null
+              ? (isOn! ? color : context.colors.offlineGrey)
+              : color,
           size: 28,
         ),
         const SizedBox(height: 8),
@@ -556,15 +600,15 @@ class _StatusItem extends StatelessWidget {
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 16,
-            color: isOn == true ? color : AppTheme.textPrimary,
+            color: isOn == true ? color : context.colors.textPrimary,
           ),
         ),
         const SizedBox(height: 2),
         Text(
           label,
-          style: const TextStyle(
+          style: TextStyle(
             fontSize: 12,
-            color: AppTheme.textSecondary,
+            color: context.colors.textSecondary,
             fontWeight: FontWeight.w500,
           ),
         ),
@@ -597,10 +641,10 @@ class _ControlButton extends StatelessWidget {
         curve: Curves.easeOutExpo,
         padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
         decoration: BoxDecoration(
-          color: isOn ? color.withValues(alpha: 0.15) : AppTheme.cardBg,
+          color: isOn ? color.withValues(alpha: 0.15) : context.colors.cardBg,
           borderRadius: BorderRadius.circular(24),
           border: Border.all(
-            color: isOn ? color : Colors.white.withValues(alpha: 0.05),
+            color: isOn ? color : context.colors.borderStroke,
             width: 2,
           ),
           boxShadow: isOn
@@ -619,7 +663,7 @@ class _ControlButton extends StatelessWidget {
               duration: const Duration(milliseconds: 300),
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isOn ? color : AppTheme.surfaceBg,
+                color: isOn ? color : context.colors.surfaceBg,
                 shape: BoxShape.circle,
                 boxShadow: isOn
                     ? [
@@ -633,29 +677,31 @@ class _ControlButton extends StatelessWidget {
               child: Icon(
                 icon,
                 size: 36,
-                color: isOn ? Colors.white : AppTheme.textSecondary,
+                color: isOn ? Colors.white : context.colors.textSecondary,
               ),
             ),
             const SizedBox(height: 16),
             Text(
               label,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 16,
-                color: AppTheme.textPrimary,
+                color: context.colors.textPrimary,
               ),
             ),
             const SizedBox(height: 6),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
               decoration: BoxDecoration(
-                color: isOn ? color.withValues(alpha: 0.2) : AppTheme.surfaceBg,
+                color: isOn
+                    ? color.withValues(alpha: 0.2)
+                    : context.colors.surfaceBg,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 isOn ? 'ACTIVE' : 'INACTIVE',
                 style: TextStyle(
-                  color: isOn ? color : AppTheme.textSecondary,
+                  color: isOn ? color : context.colors.textSecondary,
                   fontWeight: FontWeight.w800,
                   fontSize: 10,
                   letterSpacing: 1.0,
@@ -687,9 +733,9 @@ class _ScheduleCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
-        color: AppTheme.cardBg,
+        color: context.colors.cardBg,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
+        border: Border.all(color: context.colors.borderStroke),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -707,10 +753,10 @@ class _ScheduleCard extends StatelessWidget {
               const SizedBox(width: 16),
               Text(
                 title,
-                style: const TextStyle(
+                style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 18,
-                  color: AppTheme.textPrimary,
+                  color: context.colors.textPrimary,
                 ),
               ),
             ],
