@@ -17,7 +17,6 @@ class ControlScreen extends StatefulWidget {
 class _ControlScreenState extends State<ControlScreen> {
   String? _selectedDeviceId;
 
-  // Menggunakan default value format HH:mm
   final _uvStartController = TextEditingController(text: '18:00');
   final _uvStopController = TextEditingController(text: '23:00');
   final _pumpTimeController = TextEditingController(text: '06:00');
@@ -50,7 +49,6 @@ class _ControlScreenState extends State<ControlScreen> {
     super.dispose();
   }
 
-  // Fungsi untuk memunculkan dialog TimePicker
   Future<void> _selectTime(
     BuildContext context,
     TextEditingController controller,
@@ -83,7 +81,6 @@ class _ControlScreenState extends State<ControlScreen> {
     final provider = context.watch<DeviceProvider>();
     final devices = provider.devices;
 
-    // Validate if the selected device still exists
     if (_selectedDeviceId != null &&
         !devices.any((d) => d.id == _selectedDeviceId)) {
       _selectedDeviceId = null;
@@ -126,7 +123,6 @@ class _ControlScreenState extends State<ControlScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Device Selector
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -206,7 +202,6 @@ class _ControlScreenState extends State<ControlScreen> {
 
             if (device != null) ...[
               const SizedBox(height: 24),
-              // Status Bar Quick Info
               Container(
                 padding: const EdgeInsets.symmetric(vertical: 20),
                 decoration: BoxDecoration(
@@ -250,7 +245,6 @@ class _ControlScreenState extends State<ControlScreen> {
               ),
               const SizedBox(height: 28),
 
-              // Section: Kontrol Manual
               Text(
                 'Kontrol Manual',
                 style: TextStyle(
@@ -289,7 +283,6 @@ class _ControlScreenState extends State<ControlScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Pompa Manual dengan Durasi
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
@@ -352,7 +345,6 @@ class _ControlScreenState extends State<ControlScreen> {
               ),
               const SizedBox(height: 32),
 
-              // Section: Penjadwalan
               Text(
                 'Penjadwalan Otomatis',
                 style: TextStyle(
@@ -363,7 +355,6 @@ class _ControlScreenState extends State<ControlScreen> {
               ),
               const SizedBox(height: 16),
 
-              // UV Schedule Card
               _ScheduleCard(
                 icon: Icons.wb_sunny_rounded,
                 title: 'Jadwal UV Light',
@@ -402,7 +393,6 @@ class _ControlScreenState extends State<ControlScreen> {
                         style: TextStyle(color: Colors.white),
                       ),
                       onPressed: () {
-                        // ESP32 hanya butuh parameter jam dalam integer
                         int start =
                             int.tryParse(
                               _uvStartController.text.split(':')[0],
@@ -428,7 +418,6 @@ class _ControlScreenState extends State<ControlScreen> {
               ),
               const SizedBox(height: 16),
 
-              // Pump Schedule Card
               _ScheduleCard(
                 icon: Icons.water_rounded,
                 title: 'Jadwal Penyiraman',
@@ -517,7 +506,6 @@ class _ControlScreenState extends State<ControlScreen> {
     );
   }
 
-  // Komponen text field standar untuk input angka durasi
   Widget _buildTextField(
     String label,
     TextEditingController controller,
@@ -542,7 +530,6 @@ class _ControlScreenState extends State<ControlScreen> {
     );
   }
 
-  // Komponen text field khusus yang memunculkan Time Picker saat ditekan
   Widget _buildTimeField(
     String label,
     TextEditingController controller,

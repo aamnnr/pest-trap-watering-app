@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mqtt_client/mqtt_client.dart'; // Tambahkan import ini untuk MqttConnectionState
+import 'package:mqtt_client/mqtt_client.dart';
 import '../models/device.dart';
 import '../models/log_entry.dart';
 import '../services/mqtt_service.dart';
@@ -70,7 +70,6 @@ class DeviceProvider extends ChangeNotifier {
       device.pumpOn = false;
     }
 
-    // Tambahkan log
     final log = LogEntry(
       deviceId: deviceId,
       timestamp: now,
@@ -84,12 +83,10 @@ class DeviceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // === KIRIM PERINTAH ===
   void sendCommand(String deviceId, Map<String, dynamic> command) {
     mqttService.publishCommand(deviceId, command);
   }
 
-  // === HAPUS LOG ===
   Future<void> clearLogs({String? deviceId}) async {
     if (deviceId == null) {
       _logs.clear();
@@ -100,7 +97,6 @@ class DeviceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  // === HAPUS PERANGKAT ===
   Future<void> deleteDevice(String deviceId) async {
     if (_devices.containsKey(deviceId)) {
       _devices.remove(deviceId);
@@ -112,7 +108,6 @@ class DeviceProvider extends ChangeNotifier {
     }
   }
 
-  // === GETTERS ===
   List<Device> get devices => _devices.values.toList();
 
   Device? getDevice(String id) => _devices[id];

@@ -42,12 +42,11 @@ class InfoScreen extends StatelessWidget {
           20,
           MediaQuery.of(context).padding.top + kToolbarHeight + 20,
           20,
-          100, // padding for bottom nav
+          100, 
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // App Info Card
             _buildSectionTitle('Info Aplikasi', context),
             Container(
               padding: const EdgeInsets.all(24),
@@ -102,7 +101,6 @@ class InfoScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
-            // Tampilan (Theme) Settings
             _buildSectionTitle('Tampilan', context),
             Container(
               decoration: BoxDecoration(
@@ -155,7 +153,6 @@ class InfoScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
-            // Network Settings
             _buildSectionTitle('Pengaturan Koneksi', context),
             Container(
               decoration: BoxDecoration(
@@ -228,7 +225,6 @@ class InfoScreen extends StatelessWidget {
             ),
             const SizedBox(height: 32),
 
-            // Device Management
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [

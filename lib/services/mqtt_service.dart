@@ -19,7 +19,6 @@ class MqttService {
 
   Future<void> connect() async {
     try {
-      // jika sudah connect jangan connect ulang
       if (isConnected) {
         debugPrint('MQTT already connected');
         return;
@@ -35,7 +34,6 @@ class MqttService {
 
     client.keepAlivePeriod = 20;
 
-    // AUTO RECONNECT
     client.autoReconnect = true;
     client.resubscribeOnAutoReconnect = true;
 

@@ -66,7 +66,6 @@ class HomeScreen extends StatelessWidget {
                 top: MediaQuery.of(context).padding.top + kToolbarHeight,
               ),
             ),
-            // Header Summary Card
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.symmetric(
@@ -75,7 +74,6 @@ class HomeScreen extends StatelessWidget {
                 ),
                 child: Row(
                   children: [
-                    // --- KOLOM KIRI: MONITORING PERANGKAT ---
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.all(20),
@@ -138,7 +136,6 @@ class HomeScreen extends StatelessWidget {
 
                     const SizedBox(width: 16),
 
-                    // --- KOLOM KANAN: MONITORING BROKER MQTT ---
                     Expanded(
                       child: Container(
                         padding: const EdgeInsets.all(20),
@@ -203,7 +200,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
 
-            // Devices List Header
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
@@ -246,7 +242,6 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
 
-            // Device Cards
             devices.isEmpty
                 ? SliverToBoxAdapter(
                     child: Center(
@@ -284,7 +279,7 @@ class HomeScreen extends StatelessWidget {
                 : SliverPadding(
                     padding: const EdgeInsets.only(
                       bottom: 100,
-                    ), // padding for bottom nav
+                    ),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final dev = devices[index];
@@ -341,7 +336,6 @@ class DeviceCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(24),
             child: Stack(
               children: [
-                // Glassmorphism accent glow
                 Positioned(
                   top: -20,
                   right: -20,
@@ -369,7 +363,6 @@ class DeviceCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          // Status Indicator
                           Container(
                             width: 10,
                             height: 10,
@@ -399,7 +392,6 @@ class DeviceCard extends StatelessWidget {
                             ),
                           ),
                           const Spacer(),
-                          // Battery
                           Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 8,
@@ -440,7 +432,6 @@ class DeviceCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // Quick Controls
                       Row(
                         children: [
                           Expanded(
@@ -471,7 +462,6 @@ class DeviceCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      // Footer details
                       Row(
                         children: [
                           Icon(

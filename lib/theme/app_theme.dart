@@ -8,7 +8,6 @@ class AppColors extends ThemeExtension<AppColors> {
   final Color textPrimary;
   final Color textSecondary;
 
-  // Vibrant Accents (Same across themes usually, but we can adjust if needed)
   final Color primaryGreen;
   final Color accentBlue;
   final Color accentPurple;
@@ -93,7 +92,6 @@ extension AppThemeExtension on BuildContext {
 }
 
 class AppTheme {
-  // Gradients can remain static
   static const LinearGradient primaryGradient = LinearGradient(
     colors: [Color(0xFF059669), Color(0xFF10B981)],
     begin: Alignment.topLeft,

@@ -128,7 +128,6 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                // Warning Icon
                 ScaleTransition(
                   scale: _scaleAnimation,
                   child: Container(
@@ -174,7 +173,6 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
                   ),
                 ),
                 const SizedBox(height: 40),
-                // Device Selector
                 Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 16,
@@ -217,7 +215,6 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
                   ),
                 ),
                 const SizedBox(height: 32),
-                // Reset Button
                 SizedBox(
                   width: double.infinity,
                   height: 60,
