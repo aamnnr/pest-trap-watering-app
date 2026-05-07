@@ -96,6 +96,19 @@ class DeviceProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  // === HAPUS PERANGKAT ===
+  Future<void> deleteDevice(String deviceId) async {
+    if (_devices.containsKey(deviceId)) {
+      _devices.remove(deviceId);
+      // Hapus juga log yang terkait
+      _logs.removeWhere((log) => log.deviceId == deviceId);
+      
+      await _saveDevicesToStorage();
+      await _saveLogsToStorage();
+      notifyListeners();
+    }
+  }
+
   // === GETTERS ===
   List<Device> get devices => _devices.values.toList();
 

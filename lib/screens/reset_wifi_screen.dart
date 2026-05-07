@@ -81,6 +81,10 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
             child: Container(color: AppTheme.darkBg.withValues(alpha: 0.5)),
           ),
         ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_rounded),
+          onPressed: () => Navigator.pop(context),
+        ),
         title: const Text('Reset WiFi'),
         centerTitle: true,
       ),

@@ -6,7 +6,7 @@ import 'providers/device_provider.dart';
 import 'theme/app_theme.dart';
 import 'screens/home_screen.dart';
 import 'screens/control_screen.dart';
-import 'screens/reset_wifi_screen.dart';
+import 'screens/info_screen.dart';
 import 'screens/log_screen.dart';
 
 void main() async {
@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'PestTrap Watering',
+      title: 'Pestzone Spray',
       theme: AppTheme.darkTheme,
       home: const MainScreen(),
       debugShowCheckedModeBanner: false,
@@ -64,9 +64,9 @@ class _MainScreenState extends State<MainScreen> {
       case 1:
         return ControlScreen(initialDeviceId: _selectedDeviceIdForControl);
       case 2:
-        return const ResetWifiScreen();
-      case 3:
         return const LogScreen();
+      case 3:
+        return const InfoScreen();
       default:
         return const SizedBox.shrink();
     }
@@ -120,17 +120,17 @@ class _MainScreenState extends State<MainScreen> {
                     label: 'Kontrol',
                   ),
                   BottomNavigationBarItem(
-                    icon: Icon(Icons.wifi_protected_setup_rounded),
-                    activeIcon: Icon(
-                      Icons.wifi_protected_setup_rounded,
-                      size: 28,
-                    ),
-                    label: 'WiFi',
-                  ),
-                  BottomNavigationBarItem(
                     icon: Icon(Icons.analytics_rounded),
                     activeIcon: Icon(Icons.analytics_rounded, size: 28),
                     label: 'Log',
+                  ),
+                  BottomNavigationBarItem(
+                    icon: Icon(Icons.settings_rounded),
+                    activeIcon: Icon(
+                      Icons.settings_rounded,
+                      size: 28,
+                    ),
+                    label: 'Pengaturan',
                   ),
                 ],
               ),
