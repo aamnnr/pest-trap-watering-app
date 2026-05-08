@@ -1,21 +1,62 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:mqtt_client/mqtt_client.dart';
 import 'package:mqtt_client/mqtt_server_client.dart';
-import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class MqttService {
   late MqttServerClient client;
 
-  final String broker = 'broker.hivemq.com';
-  final int port = 1883;
+  MqttService() {
+    client = MqttServerClient(broker, 'flutter_placeholder');
+  }
 
-  final String telemetryTopic = 'tanisolution/+/telemetry';
+  static const String broker = 'broker.hivemq.com';
+  static const int port = 1883;
+  static const String telemetryTopic = 'tanisolution/+/telemetry';
 
   void Function(String deviceId, String event, Map<String, dynamic>? data)?
   onTelemetry;
 
-  bool get isConnected =>
-      client.connectionStatus?.state == MqttConnectionState.connected;
+  List<Map<String, dynamic>> _commandQueue = [];
+  final String _storageKey = 'mqtt_cmd_queue';
+
+  bool get isConnected {
+    try {
+      return client.connectionStatus?.state == MqttConnectionState.connected;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<void> _loadQueueFromStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String? jsonString = prefs.getString(_storageKey);
+
+      if (jsonString != null && jsonString.isNotEmpty) {
+        final List<dynamic> decoded = jsonDecode(jsonString);
+        _commandQueue = List<Map<String, dynamic>>.from(
+          decoded.map((x) => Map<String, dynamic>.from(x)),
+        );
+        debugPrint(
+          'Antrean dimuat dari storage: ${_commandQueue.length} pesan',
+        );
+      }
+    } catch (e) {
+      debugPrint('Gagal memuat antrean dari storage: $e');
+    }
+  }
+
+  Future<void> _saveQueueToStorage() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final String jsonString = jsonEncode(_commandQueue);
+      await prefs.setString(_storageKey, jsonString);
+    } catch (e) {
+      debugPrint('Gagal menyimpan antrean ke storage: $e');
+    }
+  }
 
   Future<void> connect() async {
     try {
@@ -25,15 +66,15 @@ class MqttService {
       }
     } catch (_) {}
 
+    await _loadQueueFromStorage();
+
     client = MqttServerClient(
       broker,
       'flutter_app_${DateTime.now().millisecondsSinceEpoch}',
     );
 
     client.port = port;
-
     client.keepAlivePeriod = 20;
-
     client.autoReconnect = true;
     client.resubscribeOnAutoReconnect = true;
 
@@ -48,20 +89,16 @@ class MqttService {
 
     try {
       debugPrint('Connecting to MQTT broker...');
-
-      await client.connect();
+      await client.connect().timeout(const Duration(seconds: 10));
     } catch (e) {
       debugPrint('MQTT connection error: $e');
-
       disconnect();
       return;
     }
 
     if (client.connectionStatus?.state == MqttConnectionState.connected) {
       debugPrint('MQTT connected successfully');
-
       client.subscribe(telemetryTopic, MqttQos.atLeastOnce);
-
       client.updates?.listen(_onMessage);
     } else {
       debugPrint('MQTT failed: ${client.connectionStatus}');
@@ -70,6 +107,7 @@ class MqttService {
 
   void _onConnected() {
     debugPrint('MQTT connected');
+    _processQueue();
   }
 
   void _onDisconnected() {
@@ -80,9 +118,7 @@ class MqttService {
     for (final msg in messages) {
       if (msg.payload is MqttPublishMessage) {
         final topic = msg.topic;
-
         final publishMessage = msg.payload as MqttPublishMessage;
-
         final payload = MqttPublishPayload.bytesToStringAsString(
           publishMessage.payload.message,
         );
@@ -101,11 +137,9 @@ class MqttService {
                 json.containsKey('is_night') &&
                 json.containsKey('uv')) {
               final Map<String, dynamic> data = Map<String, dynamic>.from(json);
-
               onTelemetry?.call(deviceId, 'telemetry', data);
             } else if (json.containsKey('event')) {
               final String event = json['event'];
-
               final data = (json['data'] is Map)
                   ? Map<String, dynamic>.from(json['data'])
                   : null;
@@ -122,33 +156,55 @@ class MqttService {
 
   void publishCommand(String deviceId, Map<String, dynamic> command) {
     if (!isConnected) {
-      debugPrint('Gagal mengirim: MQTT tidak terhubung');
+      debugPrint('Offline: Menyimpan perintah ke memori permanen');
+      _commandQueue.add({'deviceId': deviceId, 'command': command});
+      _saveQueueToStorage();
       return;
     }
 
-    final topic = 'tanisolution/$deviceId/command';
+    _sendToBroker(deviceId, command);
+  }
 
+  void _sendToBroker(String deviceId, Map<String, dynamic> command) {
+    final topic = 'tanisolution/$deviceId/command';
     final payload = jsonEncode(command);
 
     debugPrint('Publish topic: $topic');
     debugPrint('Payload: $payload');
 
     final builder = MqttClientPayloadBuilder();
-
     builder.addString(payload);
 
     try {
       client.publishMessage(topic, MqttQos.atLeastOnce, builder.payload!);
-
       debugPrint('Publish success');
     } catch (e) {
       debugPrint('Publish error: $e');
     }
   }
 
+  Future<void> _processQueue() async {
+    if (_commandQueue.isEmpty) return;
+
+    debugPrint('Memproses ${_commandQueue.length} pesan tertunda...');
+
+    final List<Map<String, dynamic>> tempQueue = List.from(_commandQueue);
+
+    for (var item in tempQueue) {
+      _sendToBroker(item['deviceId'], item['command']);
+      await Future.delayed(const Duration(milliseconds: 500));
+    }
+
+    _commandQueue.clear();
+    await _saveQueueToStorage();
+    debugPrint('Antrean berhasil dikirim dan dibersihkan.');
+  }
+
   void disconnect() {
     try {
       client.disconnect();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('Disconnect error: $e');
+    }
   }
 }

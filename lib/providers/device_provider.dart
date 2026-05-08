@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mqtt_client/mqtt_client.dart';
 import '../models/device.dart';
 import '../models/log_entry.dart';
 import '../services/mqtt_service.dart';
@@ -26,13 +25,7 @@ class DeviceProvider extends ChangeNotifier {
   Future<void> refresh() async {
     try {
       debugPrint('Refreshing MQTT connection...');
-
-      mqttService.disconnect();
-
-      await Future.delayed(const Duration(seconds: 1));
-
       await mqttService.connect();
-
       notifyListeners();
     } catch (e) {
       debugPrint('Refresh error: $e');
@@ -60,6 +53,7 @@ class DeviceProvider extends ChangeNotifier {
       device.battery = data['bat'] ?? device.battery;
       device.isNight = data['is_night'] ?? device.isNight;
       device.uvOn = (data['uv'] == 1);
+      device.pumpOn = (data['pump'] == 1);
     } else if (event == 'uv_on') {
       device.uvOn = true;
     } else if (event == 'uv_off') {
@@ -122,15 +116,7 @@ class DeviceProvider extends ChangeNotifier {
     return DateTime.now().difference(d.lastSeen!).inMinutes < 5;
   }).length;
 
-  bool get isMqttConnected {
-    try {
-      if (mqttService.client.connectionStatus == null) return false;
-      return mqttService.client.connectionStatus!.state ==
-          MqttConnectionState.connected;
-    } catch (e) {
-      return false;
-    }
-  }
+  bool get isMqttConnected => mqttService.isConnected;
 
   static const _logKey = 'device_logs';
   static const _deviceKey = 'saved_devices';
