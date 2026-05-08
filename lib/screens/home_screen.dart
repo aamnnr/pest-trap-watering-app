@@ -22,11 +22,9 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        systemOverlayStyle:
-      Theme.of(context).brightness ==
-              Brightness.dark
-          ? SystemUiOverlayStyle.light
-          : SystemUiOverlayStyle.dark,
+        systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: ClipRect(
@@ -50,6 +48,16 @@ class HomeScreen extends StatelessWidget {
             icon: const Icon(Icons.refresh_rounded),
             onPressed: () async {
               await provider.refresh();
+
+              if (context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text('Data perangkat diperbarui'),
+                    backgroundColor: context.colors.primaryGreen,
+                    behavior: SnackBarBehavior.floating,
+                  ),
+                );
+              }
             },
           ),
         ],
@@ -277,9 +285,7 @@ class HomeScreen extends StatelessWidget {
                     ),
                   )
                 : SliverPadding(
-                    padding: const EdgeInsets.only(
-                      bottom: 100,
-                    ),
+                    padding: const EdgeInsets.only(bottom: 100),
                     sliver: SliverList(
                       delegate: SliverChildBuilderDelegate((context, index) {
                         final dev = devices[index];
@@ -440,10 +446,23 @@ class DeviceCard extends StatelessWidget {
                               label: 'UV Light',
                               isOn: device.uvOn,
                               color: context.colors.accentPurple,
-                              onToggle: (val) => provider.sendCommand(
-                                device.id,
-                                {'uv_action': val ? 'ON' : 'OFF'},
-                              ),
+                              onToggle: (val) {
+                                provider.sendCommand(device.id, {
+                                  'uv_action': val ? 'ON' : 'OFF',
+                                });
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Perintah UV Light ${val ? 'dinyalakan' : 'dimatikan'} dikirim. Akan diproses saat alat aktif.',
+                                    ),
+                                    backgroundColor:
+                                        context.colors.accentPurple,
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                           const SizedBox(width: 12),
@@ -453,10 +472,22 @@ class DeviceCard extends StatelessWidget {
                               label: 'Pump',
                               isOn: device.pumpOn,
                               color: context.colors.accentBlue,
-                              onToggle: (val) => provider.sendCommand(
-                                device.id,
-                                {'pump_action': val ? 'ON' : 'OFF'},
-                              ),
+                              onToggle: (val) {
+                                provider.sendCommand(device.id, {
+                                  'pump_action': val ? 'ON' : 'OFF',
+                                });
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                      'Perintah Pump ${val ? 'dinyalakan' : 'dimatikan'} dikirim. Akan diproses saat alat aktif.',
+                                    ),
+                                    backgroundColor: context.colors.accentBlue,
+                                    behavior: SnackBarBehavior.floating,
+                                    duration: const Duration(seconds: 2),
+                                  ),
+                                );
+                              },
                             ),
                           ),
                         ],

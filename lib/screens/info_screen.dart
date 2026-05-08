@@ -42,7 +42,7 @@ class InfoScreen extends StatelessWidget {
           20,
           MediaQuery.of(context).padding.top + kToolbarHeight + 20,
           20,
-          100, 
+          100,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -148,6 +148,20 @@ class InfoScreen extends StatelessWidget {
                 value: themeProvider.isDarkMode,
                 onChanged: (bool value) {
                   themeProvider.toggleTheme();
+
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text(
+                        value
+                            ? 'Mode gelap diaktifkan'
+                            : 'Mode terang diaktifkan',
+                        style: TextStyle(color: context.colors.textPrimary),
+                      ),
+                      backgroundColor: context.colors.cardBg,
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 2),
+                    ),
+                  );
                 },
               ),
             ),

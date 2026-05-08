@@ -29,14 +29,24 @@ class _LogScreenState extends State<LogScreen> {
     final Map<String, Color> deviceColors = {};
     for (int i = 0; i < devices.length; i++) {
       final hue = (i * 137.5) % 360;
-      deviceColors[devices[i].id] = HSLColor.fromAHSL(1.0, hue, 0.7, 0.55).toColor();
+      deviceColors[devices[i].id] = HSLColor.fromAHSL(
+        1.0,
+        hue,
+        0.7,
+        0.55,
+      ).toColor();
     }
 
     int extraIdx = devices.length;
     for (final log in logs) {
       if (!deviceColors.containsKey(log.deviceId)) {
         final hue = (extraIdx * 137.5) % 360;
-        deviceColors[log.deviceId] = HSLColor.fromAHSL(1.0, hue, 0.7, 0.55).toColor();
+        deviceColors[log.deviceId] = HSLColor.fromAHSL(
+          1.0,
+          hue,
+          0.7,
+          0.55,
+        ).toColor();
         extraIdx++;
       }
     }
@@ -95,7 +105,7 @@ class _LogScreenState extends State<LogScreen> {
                 l.data != null &&
                 l.data!['bat'] != null,
           )
-          .take(60) 
+          .take(60)
           .toList();
 
       final Map<String, List<FlSpot>> deviceSpots = {};
@@ -132,11 +142,9 @@ class _LogScreenState extends State<LogScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        systemOverlayStyle:
-      Theme.of(context).brightness ==
-              Brightness.dark
-          ? SystemUiOverlayStyle.light
-          : SystemUiOverlayStyle.dark,
+        systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: ClipRect(
@@ -464,7 +472,20 @@ class _LogScreenState extends State<LogScreen> {
                                   context.read<DeviceProvider>().clearLogs(
                                     deviceId: _filterDeviceId,
                                   );
+
                                   Navigator.pop(ctx);
+
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        _filterDeviceId == null
+                                            ? 'Semua riwayat berhasil dihapus'
+                                            : 'Riwayat perangkat berhasil dihapus',
+                                      ),
+                                      backgroundColor: context.colors.dangerRed,
+                                      behavior: SnackBarBehavior.floating,
+                                    ),
+                                  );
                                 },
                                 child: const Text(
                                   'Hapus',
@@ -509,9 +530,7 @@ class _LogScreenState extends State<LogScreen> {
                   ),
                 )
               : SliverPadding(
-                  padding: const EdgeInsets.only(
-                    bottom: 100,
-                  ),
+                  padding: const EdgeInsets.only(bottom: 100),
                   sliver: SliverList(
                     delegate: SliverChildBuilderDelegate((context, i) {
                       final log = logs[i];
@@ -542,10 +561,16 @@ class _LogScreenState extends State<LogScreen> {
                                     vertical: 2,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: (deviceColors[log.deviceId] ?? context.colors.textSecondary).withValues(alpha: 0.1),
+                                    color:
+                                        (deviceColors[log.deviceId] ??
+                                                context.colors.textSecondary)
+                                            .withValues(alpha: 0.1),
                                     borderRadius: BorderRadius.circular(6),
                                     border: Border.all(
-                                      color: (deviceColors[log.deviceId] ?? context.colors.textSecondary).withValues(alpha: 0.3),
+                                      color:
+                                          (deviceColors[log.deviceId] ??
+                                                  context.colors.textSecondary)
+                                              .withValues(alpha: 0.3),
                                     ),
                                   ),
                                   child: Text(
@@ -555,7 +580,9 @@ class _LogScreenState extends State<LogScreen> {
                                               .toUpperCase()
                                         : log.deviceId.toUpperCase(),
                                     style: TextStyle(
-                                      color: deviceColors[log.deviceId] ?? context.colors.textSecondary,
+                                      color:
+                                          deviceColors[log.deviceId] ??
+                                          context.colors.textSecondary,
                                       fontSize: 10,
                                       fontWeight: FontWeight.bold,
                                       letterSpacing: 0.5,

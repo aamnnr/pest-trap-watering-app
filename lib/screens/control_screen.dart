@@ -93,11 +93,9 @@ class _ControlScreenState extends State<ControlScreen> {
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        systemOverlayStyle:
-      Theme.of(context).brightness ==
-              Brightness.dark
-          ? SystemUiOverlayStyle.light
-          : SystemUiOverlayStyle.dark,
+        systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: ClipRect(
@@ -262,9 +260,22 @@ class _ControlScreenState extends State<ControlScreen> {
                       label: 'UV Light',
                       isOn: device.uvOn,
                       color: context.colors.accentPurple,
-                      onToggle: (val) => provider.sendCommand(device.id, {
-                        'uv_action': val ? 'ON' : 'OFF',
-                      }),
+                      onToggle: (val) {
+                        provider.sendCommand(device.id, {
+                          'uv_action': val ? 'ON' : 'OFF',
+                        });
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Perintah UV Light ${val ? 'dinyalakan' : 'dimatikan'} dikirim. Akan diproses saat alat aktif.',
+                            ),
+                            backgroundColor: context.colors.accentPurple,
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -274,9 +285,22 @@ class _ControlScreenState extends State<ControlScreen> {
                       label: 'Water Pump',
                       isOn: device.pumpOn,
                       color: context.colors.accentBlue,
-                      onToggle: (val) => provider.sendCommand(device.id, {
-                        'pump_action': val ? 'ON' : 'OFF',
-                      }),
+                      onToggle: (val) {
+                        provider.sendCommand(device.id, {
+                          'pump_action': val ? 'ON' : 'OFF',
+                        });
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              'Perintah Water Pump ${val ? 'dinyalakan' : 'dimatikan'} dikirim. Akan diproses saat alat aktif.',
+                            ),
+                            backgroundColor: context.colors.accentBlue,
+                            behavior: SnackBarBehavior.floating,
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -324,6 +348,16 @@ class _ControlScreenState extends State<ControlScreen> {
                               'pump_action': 'ON',
                               'duration_sec': dur,
                             });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: const Text(
+                                  'Perintah dikirim. Akan diproses saat alat aktif.',
+                                ),
+                                backgroundColor: context.colors.accentBlue,
+                                duration: const Duration(seconds: 2),
+                                behavior: SnackBarBehavior.floating,
+                              ),
+                            );
                           },
                           style: ElevatedButton.styleFrom(
                             backgroundColor: context.colors.accentBlue,
@@ -407,6 +441,16 @@ class _ControlScreenState extends State<ControlScreen> {
                           'uv_start': start,
                           'uv_stop': stop,
                         });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text(
+                              'Perintah dikirim. Akan diproses saat alat aktif.',
+                            ),
+                            backgroundColor: context.colors.accentPurple,
+                            duration: const Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: context.colors.accentPurple,
@@ -469,6 +513,16 @@ class _ControlScreenState extends State<ControlScreen> {
                             'duration_sec': d,
                           },
                         });
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text(
+                              'Perintah dikirim. Akan diproses saat alat aktif.',
+                            ),
+                            backgroundColor: context.colors.accentBlue,
+                            duration: const Duration(seconds: 2),
+                            behavior: SnackBarBehavior.floating,
+                          ),
+                        );
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: context.colors.accentBlue,

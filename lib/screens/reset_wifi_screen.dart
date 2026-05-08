@@ -37,7 +37,16 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
   }
 
   void _resetWifi() {
-    if (_selectedDeviceId == null) return;
+    if (_selectedDeviceId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Pilih perangkat terlebih dahulu'),
+          backgroundColor: context.colors.warningOrange,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
     setState(() => _isResetting = true);
     context.read<DeviceProvider>().sendCommand(_selectedDeviceId!, {
       'reset_wifi': true,
@@ -74,11 +83,9 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        systemOverlayStyle:
-      Theme.of(context).brightness ==
-              Brightness.dark
-          ? SystemUiOverlayStyle.light
-          : SystemUiOverlayStyle.dark,
+        systemOverlayStyle: Theme.of(context).brightness == Brightness.dark
+            ? SystemUiOverlayStyle.light
+            : SystemUiOverlayStyle.dark,
         backgroundColor: Colors.transparent,
         elevation: 0,
         flexibleSpace: ClipRect(
@@ -231,7 +238,33 @@ class _ResetWifiScreenState extends State<ResetWifiScreen>
                       ),
                     ),
                     onPressed: (_selectedDeviceId != null && !_isResetting)
-                        ? _resetWifi
+                        ? () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (_) => AlertDialog(
+                                title: const Text('Konfirmasi Reset'),
+                                content: const Text(
+                                  'WiFi perangkat akan dihapus dan perangkat restart. Lanjutkan?',
+                                ),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: const Text('Batal'),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: const Text('Reset'),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirmed == true) {
+                              _resetWifi();
+                            }
+                          }
                         : null,
                     child: _isResetting
                         ? const SizedBox(
